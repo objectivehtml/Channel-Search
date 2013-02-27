@@ -1,9 +1,14 @@
 <?php if ( ! defined('BASEPATH')) exit('No direct script access allowed');
 
-class Radio_IBField extends IBFieldtype {
+class Radio_IBField extends InterfaceBuilderField {
 
-	public function display_field($data = '')
+	public function displayField($data = FALSE)
 	{
+		if($data)
+		{
+			$this->data = $data;	
+		}
+		
 		$html = array();
 
 		foreach($this->settings['options'] as $option_value => $option_name)

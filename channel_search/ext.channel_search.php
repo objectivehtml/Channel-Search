@@ -31,7 +31,38 @@ class Channel_search_ext {
         $this->version	= config_item('channel_search_version');
 	}
 	
-		 
+	
+	public function channel_entries_query_result($obj, $result)
+	{
+		$obj =& $obj;
+		
+		if(isset($this->EE->session->cache['channel_search']['search_results']))
+		{
+			$cache = $this->EE->session->cache['channel_search']['search_results'];
+			$response = $cache->response->result();
+			
+			$result[0]['is_first_row'] = TRUE;
+			$result[count($result) - 1]['is_last_row'] = TRUE;
+			
+			foreach($result as $index => $row)
+			{
+				if($index > 0)
+				{
+					$result[$index]['is_first_row'] = FALSE;
+				}
+				
+				if($index < count($result) - 1)
+				{
+					$result[$index]['is_last_row'] = FALSE;
+				}
+				
+				$result[$index]['distance'] = isset($response[$index]->distance) ? $response[$index]->distance : 'N/A';
+			}
+		}
+		
+		return $result;
+	}	 
+	
 	/**
 	 * Activate Extension
 	 *

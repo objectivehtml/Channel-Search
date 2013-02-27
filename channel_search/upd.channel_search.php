@@ -24,23 +24,76 @@ class Channel_search_upd {
 	public $mod_name;
 	public $ext_name;
 	public $mcp_name;
-	public $version;
+	public $version = CHANNEL_SEARCH_VERSION;
 	
 	private $tables = array(
+		'channel_search_rules' => array(
+			'id'	=> array(
+				'type'				=> 'int',
+				'constraint'		=> 100,
+				'primary_key'		=> TRUE,
+				'auto_increment'	=> TRUE
+			),
+			'search_id' => array(
+				'type'			=> 'varchar',
+				'constraint' 	=> 200
+			),
+			'channel_names' => array(
+				'type'			=> 'longtext',
+			),
+			'get_trigger' => array(
+				'type'			=> 'varchar',
+				'constraint' 	=> 200
+			)
+		),
+		'channel_search_modifiers' => array(
+			'id'	=> array(
+				'type'				=> 'int',
+				'constraint'		=> 11,
+				'primary_key'		=> TRUE,
+				'auto_increment'	=> TRUE
+			),
+			'rule_id' => array(
+				'type'			=> 'int',
+				'constraint' 	=> 11
+			),
+			'name' => array(
+				'type'			=> 'varchar',
+				'constraint' 	=> 200
+			),
+			'search_clause' => array(
+				'type'			=> 'varchar',
+				'constraint' 	=> 200
+			),
+			'modifier' => array(
+				'type'			=> 'varchar',
+				'constraint' 	=> 200
+			),
+			'rules' => array(
+				'type'			=> 'longtext',
+			),
+			'order' => array(
+				'type'			=> 'int',
+				'constraint' 	=> 11
+			)
+		)
 	);
 	
 	private $actions = array(
+		array(
+			'class' 	=> 'Gmap_mcp',
+			'method'	=> 'cron_import_action'
+		)
 	);
 	
 	private $hooks = array(
+		array('channel_entries_query_result', 'channel_entries_query_result')
 	);
 	
     public function __construct()
     {
         // Make a local reference to the ExpressionEngine super object
         $this->EE =& get_instance();
-        
-        $this->version	    = CHANNEL_SEARCH_VERSION;
         
         $this->mod_name 	= str_replace('_upd', '', __CLASS__);
         $this->ext_name		= $this->mod_name . '_ext';
@@ -49,19 +102,15 @@ class Channel_search_upd {
 	
 	public function install()
 	{	
-        $this->EE->load->config('channel_search_config');
-        
-        $this->version = CHANNEL_SEARCH_VERSION;
-        
 		$this->EE->load->library('data_forge');
 		
 		$this->EE->data_forge->update_tables($this->tables);
-		
+				
 		$data = array(
-	        'module_name' 			=> $this->mod_name,
-	        'module_version' 		=> $this->version,
-	        'has_cp_backend' 		=> 'y',
-	        'has_publish_fields' 	=> 'n'
+	        'module_name' 		 => $this->mod_name,
+	        'module_version' 	 => $this->version,
+	        'has_cp_backend' 	 => 'y',
+	        'has_publish_fields' => 'n'
 	    );
 	    	
 	    $this->EE->db->insert('modules', $data);
@@ -90,23 +139,55 @@ class Channel_search_upd {
 		return TRUE;
 	}
 	
+	
 	public function update($current = '')
-	{	
-		$this->EE->data_forge = new Data_forge();		
+	{
+		require_once 'libraries/Data_forge.php';
+	
+		$this->EE->data_forge = new Data_forge();
 		$this->EE->data_forge->update_tables($this->tables);
+
+		foreach($this->actions as $action)
+		{
+			$this->EE->db->where(array(
+				'class'  => $action['class'],
+				'method' => $action['method']
+			));
+			
+			$existing = $this->EE->db->get('actions');
+
+			if($existing->num_rows() == 0)
+			{
+				$this->EE->db->insert('actions', $action);
+			}
+		}
 		
-		/* Update the version numbers */
-		$this->EE->db->where('name', strtolower($this->mod_name));
-		$this->EE->db->update('fieldtypes', array(
-			'version' => $this->version
-		));
-				
-		$this->EE->db->where('module_name', strtolower($this->mod_name));
-		$this->EE->db->update('modules', array(
-			'module_version' => $this->version
-		));
-		
-		/* Do other updates */
+		foreach($this->hooks as $row)
+		{
+			$this->EE->db->where(array(
+				'class'  => $this->ext_name,
+				'method'  => $row[0],
+				'hook' => $row[1]
+			));
+			
+			$existing = $this->EE->db->get('extensions');
+
+			if($existing->num_rows() == 0)
+			{
+				$this->EE->db->insert(
+					'extensions',
+					array(
+						'class' 	=> $this->ext_name,
+						'method' 	=> $row[0],
+						'hook' 		=> ( ! isset($row[1])) ? $row[0] : $row[1],
+						'settings' 	=> ( ! isset($row[2])) ? '' : $row[2],
+						'priority' 	=> ( ! isset($row[3])) ? 10 : $row[3],
+						'version' 	=> $this->version,
+						'enabled' 	=> 'y',
+					)
+				);
+			}
+		}
 		
 	    return TRUE;
 	}
@@ -121,13 +202,18 @@ class Channel_search_upd {
 		
 		$this->EE->db->delete('actions', array('class' => $this->mod_name));
 		$this->EE->db->delete('actions', array('class' => $this->mcp_name));
-					
+		
+		foreach(array_keys($this->tables) as $table)
+		{
+			$this->EE->dbforge->drop_table($table);
+		}
+			
 		return TRUE;
 	}
 	
 	private function _set_defaults()
 	{ 
-		
+
 	}
 }
 // END CLASS

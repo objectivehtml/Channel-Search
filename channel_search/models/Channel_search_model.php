@@ -9,64 +9,98 @@ class Channel_search_model extends CI_Model {
 		$this->load->driver('channel_data');
 	}
 	
-	public function get_rules($id)
+	public function create_rule($rule)
 	{
-		$rules = $this->get_settings(array(
+		$this->db->insert('channel_search_rules', $rule);
+		
+		return $this->db->insert_id();
+	}
+	
+	public function update_rule($id, $rule)
+	{
+		$this->db->where('id', $id);
+		$this->db->update('channel_search_rules', $rule);
+	}
+	
+	public function delete_rule($id)
+	{
+		$this->db->where('id', $id);
+		$this->db->delete('channel_search_rules');
+		
+		$this->db->where('rule_id', $id);
+		$this->db->delete('channel_search_modifiers');
+	}
+	
+	public function create_modifier($modifier)
+	{
+		$modifiers = $this->get_modifiers(array(
 			'where' => array(
-				'search_id' => $id
+				'rule_id' => $modifier['rule_id']
 			)
 		));
 		
-		if($rules->num_rows() == 0)
-		{
-			$this->output->show_user_error('general', array(
-				'\''.$id.'\' is not a valid id.'
-			));
-		}
+		$modifier['order'] = $modifiers->num_rows();
 		
-		$rules = $rules->row();
+		$this->db->insert('channel_search_modifiers', $modifier);
 		
-		$rules->channel_names = explode('|', $rules->channel_names);
-		$rules->rules         = json_decode($rules->rules);
-		
-		return $rules;
+		return $this->db->insert_id();
 	}
 	
-	public function get_settings($param = array())
+	public function update_modifier($id, $modifier)
+	{
+		$this->db->where('id', $id);
+		$this->db->update('channel_search_modifiers', $modifier);
+	}
+	
+	public function delete_modifier($id)
+	{
+		$this->db->where('id', $id);
+		$this->db->delete('channel_search_modifiers');
+	}
+	
+	public function get_rule_modifiers($rule_id, $params = array())
+	{
+		return $this->get_modifiers(array_merge($params, array(
+			'where' => array(
+				'rule_id' => $rule_id
+			)
+		)));
+	}
+	
+	public function get_modifiers($param = array())
+	{
+		return $this->channel_data->get('channel_search_modifiers', $param);
+	}
+	
+	public function get_modifier($id, $param = array())
+	{
+		return $this->get_modifiers(array_merge($param, array(
+			'where' => array(
+				'id' => $id
+			)
+		)));
+	}
+	
+	public function get_rules($param = array())
 	{
 		return $this->channel_data->get('channel_search_rules', $param);
 	}
 		
-	public function get_setting($id)
+	public function get_rule($id)
 	{
-		return $this->get_settings(array(
+		return $this->get_rules(array(
 			'where' => array(
 				'id' => $id
 			)
 		));
-	}
-		
-	public function save_settings($data)
+	}	
+	
+	public function get_rule_by_id($id)
 	{
-		$existing_records = $this->db->get_where('channel_search_rules', array(
-			'id' => isset($data['id']) ? $data['id'] : 0
+		return $this->get_rules(array(
+			'where' => array(
+				'search_id' => $id
+			)
 		));
-		
-		if($existing_records->num_rows() == 0)
-		{
-			$this->db->insert('channel_search_rules', $data);
-		}
-		else
-		{
-			$this->db->where('id', $data['id']);		
-			$this->db->update('channel_search_rules', $data);
-		}
-	}
-	
-	public function delete_setting($id)
-	{
-		$this->db->where('id', $id);
-		$this->db->delete('channel_search_rules');
-	}
-	
+	}	
 }

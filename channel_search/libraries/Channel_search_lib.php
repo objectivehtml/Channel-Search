@@ -2,6 +2,15 @@
 
 class Channel_search_lib {
 	
+	public $ambiguous_columns = array(
+		'entry_id',
+		'title',
+		'url_title',
+		'entry_date',
+		'expiration_date',
+		'status'
+	);
+	
 	public function __construct()
 	{
 		$this->EE =& get_instance();
@@ -10,6 +19,269 @@ class Channel_search_lib {
 		$this->EE->load->model('channel_search_model');
 	}
 	
+	public function reset_get()
+	{
+		$_GET = array();
+	}
+	
+	public function set_cache()
+	{		
+		$this->EE->functions->set_cookie('channel_search_last_post', json_encode($_POST), strtotime('+1 year'));
+	}
+	
+	public function get_cache()
+	{
+		if($this->EE->input->cookie('channel_search_last_post'))
+		{
+			$_POST = (array) json_decode($this->EE->input->cookie('channel_search_last_post'));
+		}
+	}
+	
+	public function trim_array($array)
+	{
+		foreach($array as $index => $value)
+		{
+			if(is_array($value))
+			{
+				$array[$index] = $this->trim_array($value);
+			}
+			else if(is_string($value))
+			{
+				$array[$index] = trim($value);
+			}
+		}
+		
+		return $array;
+	}
+	
+	public function search($id, $order_by = 'exp_channel_titles.entry_id', $sort = 'DESC', $limit = 20, $offset = 0)
+	{
+		$search = $this->EE->channel_search_model->get_rule_by_id($id);
+		
+		if($search->num_rows() == 0)
+		{
+			return FALSE;
+		}
+		
+		$search    = $search->row();
+		$rule_data = $this->EE->channel_search_model->get_rule_modifiers($search->id);
+		
+		if($rule_data->num_rows() == 0)
+		{
+			return FALSE;
+		}
+		
+		$from     = array();
+		$group_by = array();
+		$having   = array();
+		$join     = array('INNER JOIN `exp_channel_titles` USING (entry_id)');
+		$select   = array(
+			'SQL_CALC_FOUND_ROWS `exp_channel_titles`.*',
+			'exp_channel_titles.entry_id',
+			'exp_channel_titles.site_id',
+			'exp_channel_titles.title',
+			'exp_channel_titles.url_title',
+			'exp_channel_titles.entry_date',
+			'exp_channel_titles.expiration_date',
+			'exp_channel_titles.author_id',
+			'exp_channel_titles.status',
+		);
+		
+		$where = array();
+		$required_where = array('exp_channel_titles.site_id = '.config_item('site_id'));
+	
+		$channel_names = explode(',', $search->channel_names);
+		$channel_where = array();
+		
+		$field_array = array();
+		
+		foreach($channel_names as $channel_name)
+		{
+			$channel_name = trim($channel_name);
+			$channel      = $this->EE->channel_data->get_channel_by_name($channel_name);
+			
+			if($channel->num_rows() > 0)
+			{
+				$channel = $channel->row();
+				$channel_where[] = 'exp_channel_titles.channel_id = '.$channel->channel_id;
+				
+				$fields  = $this->EE->channel_data->get_fields(array(
+					'where' => array(
+						'group_id' => $channel->field_group
+					)
+				));
+								
+				foreach($fields->result() as $field)
+				{
+					$field_array[] = $field;
+					$select[] 	   = 'field_id_'.$field->field_id.' as \''.$field->field_name.'\'';
+				}				
+			}
+		}
+		
+		$field_array = $this->EE->channel_data->utility->reindex('field_name', $field_array);
+		
+		$required_where[] = implode(' AND ', $channel_where);
+		
+		foreach($rule_data->result() as $row)
+		{
+			$row->rules = json_decode($row->rules);
+			
+			$rule = $this->EE->search_rules->get_rule($row->modifier);
+			$rule->set_settings($row);
+			$rule->set_fields($field_array);
+			
+			$rule_from   = $rule->get_from();
+			$rule_having = $rule->get_having();
+			$rule_select = $rule->get_select();
+			$rule_where  = $rule->get_where();
+			$rule_join   = $rule->get_join();
+			$rule_group  = $rule->get_group_by();
+			
+			if($rule_from && !empty($rule_from))
+			{
+				$from[]  = $rule_from;
+			}
+			
+			if(!empty($rule_having))
+			{
+				$having[]  = array(
+					'clause' => $row->search_clause,
+					'rule'   => $rule_having
+				);
+			}	
+			
+			if(!empty($rule_join))
+			{
+				$join[]  = $rule_join;
+			}
+			
+			if(!empty($rule_select))
+			{
+				$select[]  = $rule_select;
+			}
+			
+			if(!empty($rule_group))
+			{
+				$group_by[]  = ($rule_group);
+			}
+			
+			if(!empty($rule_where))
+			{
+				$where[]  = array(
+					'clause' => $row->search_clause,
+					'rule'   => $rule_where
+				);
+			}		
+		}
+		
+		if(count($join) > 0)
+		{
+			$join_sql = ' '.implode(' ', $join);
+		}
+		
+		$having_sql = array();
+		$where_sql = array();
+		
+		foreach(array('having', 'where') as $var)
+		{
+			foreach($$var as $value)
+			{
+				if(is_array($value))
+				{
+					if(is_array($value['rule']))
+					{
+						${$var.'_sql'}[] = $value['clause'].' ('.implode(' AND ', $value['rule']).')';
+					}
+					else
+					{
+						${$var.'_sql'}[] = $value['clause'].' ('.$value['rule'].')';
+					}
+				}
+				else
+				{
+					${$var.'_sql'}[] = 'AND ('.$value.')';
+				}
+			}
+		}
+		
+		$from_sql = array();
+		$group_by_sql = array();
+		$select_sql = array();
+		
+		foreach(array('from', 'group_by', 'select') as $var)
+		{
+			foreach($$var as $field)
+			{
+				if(is_string($field))
+				{
+					${$var.'_sql'}[] = $field;
+				}
+				else if(is_array($field))
+				{
+					${$var.'_sql'}[] = implode(', ', $field);
+				}
+			}
+		}
+		
+		$from = count($from_sql) > 0 ? implode(' ', $from_sql) : '`exp_channel_data`';
+		
+		$where_sql = $this->clean_sql(implode(' ', $where_sql));
+		
+		if(in_array($order_by, $this->ambiguous_columns))
+		{
+			$order_by = 'exp_channel_titles.'.$order_by;
+		}
+				
+		$sql = '
+			SELECT 
+				'.implode(', ', $select_sql).'
+			FROM
+				'.$from.'
+			'.(isset($join_sql) ? $join_sql : NULL).'
+			WHERE
+				('.$this->clean_sql(implode(' AND ', $required_where)).')
+				'.(!empty($where_sql) ? 'AND (
+					'.$where_sql : NULL).'
+				)
+			'.(count($group_by_sql) > 0 ? 'GROUP BY '.implode(', ', $group_by_sql) : NULL).'
+			'.(count($having_sql) > 0 ? 'HAVING '.$this->clean_sql(implode(' ', $having_sql)) : NULL).'
+			ORDER BY '.$order_by.' '.$sort.'
+			LIMIT '.$offset.','.$limit.'
+		';
+		
+		// var_dump($sql);exit();
+		
+		
+		$has_searched = FALSE;
+		
+		foreach(explode(',', $search->get_trigger) as $trigger)
+		{
+			$trigger = trim($trigger);
+			
+			if($this->EE->input->get_post($trigger))
+			{
+				$has_searched = TRUE;
+			}
+		}
+		
+		$response = (object) array(
+			'response' => $has_searched ? $this->EE->db->query($sql) : FALSE,
+			'channels' => implode('|', $channel_names),
+			'has_searched'     => $has_searched ? TRUE : FALSE,
+			'has_not_searched' => $has_searched ? FALSE : TRUE,
+			'id'       => $id,
+			'order_by' => $order_by,
+			'sort'     => $sort,
+			'limit'    => $limit,
+			'offset'   => $offset,
+			'grand_total' => $this->EE->db->query('SELECT FOUND_ROWS() as \'total\'')->row('total'),
+		);
+		
+		return $response;
+	}
+	
+	/*
 	public function search($id, $order_by = 'entry_id', $sort = 'DESC', $limit = 20, $offset = 0)
 	{
 		$reserved_fields = array('entry_id', 'site_id', 'channel_id');
@@ -72,7 +344,7 @@ class Channel_search_lib {
 		);
 		
 		return $response;
-	}
+	}*/
 	
 	public function parse($entry_data)
 	{
@@ -254,7 +526,7 @@ class Channel_search_lib {
 			$return[] = $this->build_rule($rule, $data);
 		}
 		
-		return $this->clean_string(implode(' ', $return));
+		return $this->clean_sql($return);
 	}
 	
 	public function build_rule($rule, $data = array())
@@ -280,14 +552,19 @@ class Channel_search_lib {
 		return new $class();
 	}
 	
-	public function clean_string($haystack = '')
+	public function clean_sql($sql = '')
 	{
-		foreach(array('AND', 'OR') as $needle)
+		if(is_array($sql))
 		{
-			$haystack = ltrim($haystack, $needle);
+			$sql = implode(' ', $sql);
 		}
 		
-		return trim($haystack);
+		foreach(array('AND', 'OR') as $value)
+		{
+			$sql = ltrim($sql, $value);
+		}
+		
+		return trim($sql);
 	}
 	
 	public function next_url($page)
