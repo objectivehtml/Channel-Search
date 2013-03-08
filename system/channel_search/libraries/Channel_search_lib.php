@@ -246,9 +246,7 @@ class Channel_search_lib {
 			'.(isset($join_sql) ? $join_sql : NULL).'
 			WHERE
 				('.$this->clean_sql(implode(' AND ', $required_where)).')
-				'.(!empty($where_sql) ? 'AND (
-					'.$where_sql : NULL).'
-				)
+				'.(!empty($where_sql) ? 'AND ('.$where_sql.')' : NULL).'
 			'.(count($group_by_sql) > 0 ? 'GROUP BY '.implode(', ', $group_by_sql) : NULL).'
 			'.(count($having_sql) > 0 ? 'HAVING '.$this->clean_sql(implode(' ', $having_sql)) : NULL).'
 			ORDER BY '.$order_by.' '.$sort.'
