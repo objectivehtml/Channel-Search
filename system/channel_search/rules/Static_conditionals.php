@@ -60,11 +60,21 @@ class Static_conditionals_channel_search_rule extends Base_rule {
 			
 			foreach($this->settings->rules as $rule)
 			{
+				if(empty($rule->clause))
+				{
+					$rule->clause = 'AND';
+				}
+				
+				if(empty($rule->operator))
+				{
+					$rule->operator = '=';
+				}
+				
 				$value = $EE->db->escape($rule->value);
 				
 				if(!empty($value))
 				{
-					$where[] = $rule->clause.' '.$rule->field_name.' '.(!empty($rule->operator) ? $rule->operator : '=').' '.$value;
+					$where[] = $rule->clause.' '.$rule->field_name.' '.$rule->operator.' '.$value;
 				}
 			}
 			

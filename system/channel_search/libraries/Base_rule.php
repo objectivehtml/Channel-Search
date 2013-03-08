@@ -159,6 +159,19 @@ abstract class Base_rule {
 	
 	
 	/**
+	* Get the channels
+	*
+	* @access	public
+	* @return	array
+	*/
+	
+	public function get_channels()
+	{
+		return $this->channels;
+	}
+	
+	
+	/**
 	* Get the title of the rule
 	*
 	* @access	public
@@ -247,6 +260,20 @@ abstract class Base_rule {
 	public function set_fields($fields)
 	{
 		$this->fields = $fields;
+	}
+		
+	
+	/**
+	* Sets the channels array
+	*
+	* @access	public
+	* @param	array 	An array storing the fields
+	* @return	null
+	*/
+	
+	public function set_channels($channels)
+	{
+		$this->channels = $channels;
 	}
 	
 	
@@ -390,5 +417,22 @@ abstract class Base_rule {
 		}
 		
 		return trim($sql);
+	}
+	
+	public function trim_array($array)
+	{
+		foreach($array as $index => $value)
+		{
+			if(is_array($value))
+			{
+				$array[$index] = $this->trim_array($value);
+			}
+			else if(is_string($value))
+			{
+				$array[$index] = trim($value);
+			}
+		}
+		
+		return $array;
 	}
 }

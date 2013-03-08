@@ -95,6 +95,8 @@ class Channel_search_lib {
 		
 		$field_array = array();
 		
+		$channels = array();
+		
 		foreach($channel_names as $channel_name)
 		{
 			$channel_name = trim($channel_name);
@@ -102,7 +104,8 @@ class Channel_search_lib {
 			
 			if($channel->num_rows() > 0)
 			{
-				$channel = $channel->row();
+				$channel 		 = $channel->row();
+				$channels[]      = $channel;
 				$channel_where[] = 'exp_channel_titles.channel_id = '.$channel->channel_id;
 				
 				$fields  = $this->EE->channel_data->get_fields(array(
@@ -119,6 +122,7 @@ class Channel_search_lib {
 			}
 		}
 		
+		$channels    = $this->EE->channel_data->utility->reindex('channel_name', $channels);		
 		$field_array = $this->EE->channel_data->utility->reindex('field_name', $field_array);
 		
 		$required_where[] = implode(' AND ', $channel_where);
@@ -130,6 +134,7 @@ class Channel_search_lib {
 			$rule = $this->EE->search_rules->get_rule($row->modifier);
 			$rule->set_settings($row);
 			$rule->set_fields($field_array);
+			$rule->set_channels($channels);
 			
 			$rule_from   = $rule->get_from();
 			$rule_having = $rule->get_having();
@@ -232,7 +237,7 @@ class Channel_search_lib {
 		{
 			$order_by = 'exp_channel_titles.'.$order_by;
 		}
-				
+		
 		$sql = '
 			SELECT 
 				'.implode(', ', $select_sql).'
@@ -247,22 +252,25 @@ class Channel_search_lib {
 			'.(count($group_by_sql) > 0 ? 'GROUP BY '.implode(', ', $group_by_sql) : NULL).'
 			'.(count($having_sql) > 0 ? 'HAVING '.$this->clean_sql(implode(' ', $having_sql)) : NULL).'
 			ORDER BY '.$order_by.' '.$sort.'
-			LIMIT '.$offset.','.$limit.'
-		';
-		
-		// var_dump($sql);exit();
-		
+			'.($limit > 0 ? 'LIMIT '.$offset.','.$limit : NULL);
 		
 		$has_searched = FALSE;
 		
-		foreach(explode(',', $search->get_trigger) as $trigger)
+		if(!empty($search->get_trigger))
 		{
-			$trigger = trim($trigger);
-			
-			if($this->EE->input->get_post($trigger))
+			foreach($this->trim_array(explode(',', $search->get_trigger)) as $trigger)
 			{
-				$has_searched = TRUE;
+				$trigger = trim($trigger);
+				
+				if($this->EE->input->get_post($trigger))
+				{
+					$has_searched = TRUE;
+				}
 			}
+		}
+		else
+		{
+			$has_searched = TRUE;
 		}
 		
 		$response = (object) array(

@@ -12,6 +12,23 @@ class Channel_search {
 		$this->EE->load->helper('addon');
 	}
 	
+	public function vars($return_vars = FALSE)
+	{
+		$vars = array();
+		
+		foreach(array_merge($_GET, $_POST) as $index => $value)
+		{
+			$vars[$this->param('prefix', 'form').':'.$index] = $this->EE->input->get_post($index, TRUE);
+		}
+		
+		if(!$return_vars)
+		{
+			return $this->parse(array($vars));
+		}
+		
+		return $vars;
+	}
+	
 	public function url()
 	{
 		$this->_cache_post();
@@ -53,10 +70,7 @@ class Channel_search {
 			'action' => page_url(TRUE, TRUE, FALSE)
 		), $this->EE->TMPL->tagparams);
 		
-		foreach(array_merge($_GET, $_POST) as $index => $value)
-		{
-			$vars[0]['form:'.$index] = $this->EE->input->get_post($index, TRUE);
-		}
+		$vars[0] = $this->vars(TRUE);
 		
 		$channels = $this->EE->channel_data->get_channels(array(
 			'where' => array(
@@ -140,7 +154,7 @@ class Channel_search {
 		$order_by = $this->param('order_by', $this->param('orderby', 'entry_id'));
 		$sort     = $this->param('sort', 'desc');
 		$limit    = (int) $this->param('limit', 20);
-		$page     = (float) $this->param('page', 1);
+		$page     = (int) $this->param('page', 1);
 		$offset   = 0;
 		
 		if($page > 1)
@@ -149,6 +163,11 @@ class Channel_search {
 		}	
 		
 		$results = $this->EE->channel_search_lib->search($id, $order_by, $sort, $limit, $offset);
+		
+		if(!$limit)
+		{
+			$limit = $results->grand_total;
+		}
 		
 		if($results === FALSE || ($results->has_searched && ($results->response === FALSE || $results->response->num_rows() == 0)))
 		{
@@ -203,11 +222,10 @@ class Channel_search {
 			$this->EE->session->set_cache('channel_search', 'search_results', $results);
 			
 			$this->EE->TMPL->tagdata = $this->EE->entries_lib->entries(array(
-				'channel'  => $results->channels,
-				'entry_id' => implode($entry_ids, '|'),
-				'limit'    => $limit,
-				'dynamic'  => 'no',
-				'disable'  => 'disable="member_data|categories|category_fields|pagination"'
+				'channel'     => $results->channels,
+				'entry_id'    => implode($entry_ids, '|'),
+				'fixed_order' => implode($entry_ids, '|'),
+				'limit'       => $limit,
 			));
 		}
 		

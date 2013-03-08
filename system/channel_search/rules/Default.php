@@ -67,6 +67,16 @@ class Default_channel_search_rule extends Base_rule {
 			{
 				$value = $EE->input->get_post($rule->form_field_name);
 				
+				if(empty($rule->clause))
+				{
+					$rule->clause = 'AND';
+				}
+				
+				if(empty($rule->operator))
+				{
+					$rule->operator = '=';
+				}
+				
 				if($rule->operator == 'LIKE' && $value && !empty($value))
 				{
 					$value = '%'.$value.'%';	
@@ -74,7 +84,29 @@ class Default_channel_search_rule extends Base_rule {
 				
 				if($value && !empty($value))
 				{
-					$where[] = $rule->clause.' field_id_'.$this->fields[$rule->channel_field_name]->field_id.' '.$rule->operator.' '.$EE->db->escape($value);
+					$field_names = $this->trim_array(explode(',', $rule->channel_field_name));
+					
+					if(count($field_names) == 1 && isset($this->fields[$rule->channel_field_name]))
+					{					
+						$where[] = $rule->clause.' field_id_'.$this->fields[$rule->channel_field_name]->field_id.' '.$rule->operator.' '.$EE->db->escape($value);
+					}
+					else
+					{	
+						$concat = array('\' \'');
+						
+						foreach($field_names as $field_name)
+						{
+							if(isset($this->fields[$field_name]))
+							{
+								$concat[] = 'field_id_'.$this->fields[$field_name]->field_id;	
+							}
+						}
+						
+						if(count($concat) > 1)
+						{
+							$where[] = $rule->clause.' concat_ws('.implode($concat, ',').') '.$rule->operator.' '.$EE->db->escape($value);
+						}
+					}
 				}
 			}
 			
