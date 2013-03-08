@@ -34,6 +34,8 @@
 	
 	<input type="hidden" name="modifier" value="<?php echo $name?>" />
 		
+	<input type="hidden" name="XID" value="<?php echo $xid?>" />
+	
 	<button class="submit"><?php echo $button_text ?></button>
 		
 </form>

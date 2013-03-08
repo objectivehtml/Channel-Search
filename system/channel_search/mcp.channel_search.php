@@ -107,6 +107,7 @@ class Channel_search_mcp {
 			'order_url'     => $this->cp_url('order_rule'),
 			'edit_url'      => $this->cp_url('edit_rule'),
 			'delete_url'    => $this->cp_url('delete_rule_action'),
+			'xid'           => $this->EE->security->generate_xid(),
 			'action'        => $this->cp_url('new_rule'),
 			'dropdown'      => $this->EE->search_rules->dropdown(),
 			'modifiers'     => $this->EE->channel_search_model->get_rule_modifiers($id, array(
@@ -117,7 +118,7 @@ class Channel_search_mcp {
 
 		return $this->EE->load->view('search', $vars, TRUE);
 	}
-	
+		
 	public function new_rule()
 	{
 		$rule_id = $this->EE->input->get_post('rule_id');
@@ -139,6 +140,7 @@ class Channel_search_mcp {
 			'header'        => $rule->display_header(),
 			'description'   => $rule->display_description(),
 			'display_rule'  => $rule->display_rule(),
+			'xid'           => $this->EE->security->generate_xid(),
 			'action'        => cp_url('Channel_search', 'new_rule_action')
 		);
 		
@@ -170,6 +172,7 @@ class Channel_search_mcp {
 			'header'       => $rule->display_header(),
 			'description'  => $rule->display_description(),
 			'display_rule' => $rule->display_rule($data),
+			'xid'          => $this->EE->security->generate_xid(),
 			'action'       => cp_url('Channel_search', 'edit_rule_action')
 		);
 		
@@ -260,6 +263,7 @@ class Channel_search_mcp {
 		$vars = array(
 			'type'          => 'New',
 			'button_text'   => 'Create Rule',
+			'xid'           => $this->EE->security->generate_xid(),
 			'settings'      => InterfaceBuilder::table($fields, array(), array(), channel_search_attr()),
 			'action'        => cp_url('Channel_search', 'new_search_action')
 		);
@@ -293,6 +297,7 @@ class Channel_search_mcp {
 		$vars = array(
 			'type'          => 'Edit',
 			'id'			=> $id,
+			'xid'           => $this->EE->security->generate_xid(),
 			'button_text'   => 'Save Changes',
 			'settings'      => InterfaceBuilder::table($fields, $search, array(), channel_search_attr()),
 			'action'        => cp_url('Channel_search', 'edit_search_action')

@@ -12,5 +12,7 @@
 		<input type="hidden" name="id" value="<?php echo $id?>" />
 	<?php endif; ?>
 	
+	<input type="hidden" name="XID" value="<?php echo $xid?>" />
+	
 	<button class="submit"><?php echo $button_text ?></button>	
 </form>

@@ -75,5 +75,6 @@
 <form action="<?php echo $action?>" method="post">
 	<?php echo $dropdown ?>
 	<input type="hidden" name="rule_id" value="<?php echo $rule_id?>" />
+	<input type="hidden" name="XID" value="<?php echo $xid?>" />
 	<button type="submit" class="submit">&plus; Add</button>
 </form>
