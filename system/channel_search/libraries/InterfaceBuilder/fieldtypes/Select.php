@@ -1,6 +1,6 @@
 <?php if ( ! defined('BASEPATH')) exit('No direct script access allowed');
 
-class Select_IBField extends InterfaceBuilderField {
+class Select_IBFieldType extends InterfaceBuilderField {
 
 	public function displayField($data = FALSE)
 	{

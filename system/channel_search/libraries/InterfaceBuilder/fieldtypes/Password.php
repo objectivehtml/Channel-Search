@@ -1,6 +1,6 @@
 <?php if ( ! defined('BASEPATH')) exit('No direct script access allowed');
 
-class Password_IBField extends InterfaceBuilderField {
+class Password_IBFieldType extends InterfaceBuilderField {
 
 	public $input_type;
 

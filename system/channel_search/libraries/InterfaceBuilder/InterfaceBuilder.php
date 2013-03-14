@@ -20,7 +20,7 @@ if(!class_exists('InterfaceBuilder'))
 		 * @type	string
 		 */
 		 
-		protected $classSuffix = '_IBField';
+		protected $classSuffix = '_IBFieldType';
 		
 		
 		/**
@@ -338,7 +338,7 @@ if(!class_exists('InterfaceBuilder'))
 			{
 				require_once $this->directory . ucfirst($field['type']) . $this->extension;
 			}
-				
+			
 			return new $className($field);
 		}
 		

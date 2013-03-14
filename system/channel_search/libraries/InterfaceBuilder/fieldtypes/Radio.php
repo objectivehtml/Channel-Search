@@ -1,6 +1,6 @@
 <?php if ( ! defined('BASEPATH')) exit('No direct script access allowed');
 
-class Radio_IBField extends InterfaceBuilderField {
+class Radio_IBFieldType extends InterfaceBuilderField {
 
 	public function displayField($data = FALSE)
 	{

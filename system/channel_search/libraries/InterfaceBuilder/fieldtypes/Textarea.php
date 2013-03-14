@@ -1,6 +1,6 @@
 <?php if ( ! defined('BASEPATH')) exit('No direct script access allowed');
 
-class Textarea_IBField extends InterfaceBuilderField {
+class Textarea_IBFieldType extends InterfaceBuilderField {
 
 	public function displayField($data = FALSE)
 	{
