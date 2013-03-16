@@ -10,6 +10,10 @@ class Default_channel_search_rule extends Base_rule {
 	
 	protected $name = 'default';
 	
+	protected $reserved_fields = array('title', 'status', 'entry_date', 'expiration_date');
+	
+	protected $date_fields = array('entry_date', 'expiration_date');
+	
 	protected $fields = array(						
 		'rules' => array(
 			'label' => 'Search Fields',
@@ -86,9 +90,21 @@ class Default_channel_search_rule extends Base_rule {
 				{
 					$field_names = $this->trim_array(explode(',', $rule->channel_field_name));
 					
-					if(count($field_names) == 1 && isset($this->fields[$rule->channel_field_name]))
-					{					
-						$where[] = $rule->clause.' field_id_'.$this->fields[$rule->channel_field_name]->field_id.' '.$rule->operator.' '.$EE->db->escape($value);
+					if(count($field_names) == 1 && isset($this->fields[$rule->channel_field_name]) || in_array($field_names[0], $this->reserved_fields))
+					{
+						if(in_array($field_names[0], $this->reserved_fields))
+						{
+							if(in_array($field_names[0], $this->date_fields))
+							{
+								$value = strtotime($value);
+							}
+							
+							$where[] = $rule->clause.' '.$field_names[0].' '.$rule->operator.' '.$EE->db->escape($value);
+						}
+						else
+						{	
+							$where[] = $rule->clause.' field_id_'.$this->fields[$rule->channel_field_name]->field_id.' '.$rule->operator.' '.$EE->db->escape($value);
+						}
 					}
 					else
 					{	

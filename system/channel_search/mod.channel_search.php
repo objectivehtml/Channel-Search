@@ -91,7 +91,9 @@ class Channel_search {
 			'where' => array(
 				'group_id' => $category_groups,
 				'site_id'  => config_item('site_id')
-			)
+			),
+			'order_by' => 'parent_id, cat_name',
+			'sort' => 'asc'
 		));
 		
 		$vars[0]['categories'] = array();
@@ -101,7 +103,7 @@ class Channel_search {
 			$selected = '';
 			$checked  = '';
 			
-			$form_categories = $this->EE->input->get_post('category');
+			$form_categories = $this->EE->input->get_post($this->param('category_name', 'category'));
 			
 			if(is_string($form_categories))
 			{
@@ -115,7 +117,7 @@ class Channel_search {
 			
 			$form_categories = $this->EE->channel_search_lib->trim_array($form_categories);
 			
-			if(in_array($category->cat_url_title, $form_categories))
+			if(in_array($category->{$this->param('category_index', 'cat_url_title')}, $form_categories))
 			{
 				$selected = 'selected="selected';
 				$checked  = 'checked="checked"';
@@ -123,6 +125,7 @@ class Channel_search {
 			
 			$vars[0]['categories'][] = array(
 				'category_id'   		  => $category->cat_id,
+				'category_parent_id'	  => $category->parent_id,
 				'category_group_id'		  => $category->group_id,
 				'category_name' 		  => $category->cat_name,
 				'category_url_title'      => $category->cat_url_title,
@@ -162,7 +165,7 @@ class Channel_search {
 			$offset = ($page - 1) * $limit;
 		}	
 		
-		$results = $this->EE->channel_search_lib->search($id, $order_by, $sort, $limit, $offset);
+		$results = $this->EE->channel_search_lib->search($id, $order_by, $sort, $limit, $offset, $this->param('export', FALSE, TRUE));
 		
 		if(!$limit)
 		{
@@ -231,7 +234,7 @@ class Channel_search {
 		
 		$this->EE->TMPL->tagdata = $this->parse(array($vars));
 		
-		return $this->EE->TMPL->advanced_conditionals($this->EE->TMPL->tagdata);
+		return $this->EE->TMPL->tagdata;
 	}
 	
 	private function _cache_post()

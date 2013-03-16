@@ -54,7 +54,7 @@ class Channel_search_lib {
 		return $array;
 	}
 	
-	public function search($id, $order_by = 'exp_channel_titles.entry_id', $sort = 'DESC', $limit = 20, $offset = 0)
+	public function search($id, $order_by = 'exp_channel_titles.entry_id', $sort = 'DESC', $limit = 20, $offset = 0, $export = FALSE)
 	{
 		$search = $this->EE->channel_search_model->get_rule_by_id($id);
 		
@@ -249,8 +249,28 @@ class Channel_search_lib {
 				'.(!empty($where_sql) ? 'AND ('.$where_sql.')' : NULL).'
 			'.(count($group_by_sql) > 0 ? 'GROUP BY '.implode(', ', $group_by_sql) : NULL).'
 			'.(count($having_sql) > 0 ? 'HAVING '.$this->clean_sql(implode(' ', $having_sql)) : NULL).'
-			ORDER BY '.$order_by.' '.$sort.'
-			'.($limit > 0 ? 'LIMIT '.$offset.','.$limit : NULL);
+			ORDER BY '.$order_by.' '.$sort;
+		
+		if($export)
+		{
+			$this->EE->load->dbutil();
+			
+			$csv = $this->EE->dbutil->csv_from_result($this->EE->db->query($sql));
+			
+			header("Pragma: public");
+			header("Expires: 0");
+			header("Cache-Control: must-revalidate, post-check=0, pre-check=0");
+			header("Cache-Control: private",false);
+			header("Content-Type: application/octet-stream");
+			header("Content-Disposition: attachment; filename=\"search-results-".date('Y-m-d-H-i', time()).".csv\";" );
+			header("Content-Transfer-Encoding: binary"); 
+			
+			exit($csv);
+		}
+		
+		$sql .= ($limit > 0 ? ' LIMIT '.$offset.','.$limit : NULL);
+		
+		// var_dump($sql);exit();
 		
 		$has_searched = FALSE;
 		

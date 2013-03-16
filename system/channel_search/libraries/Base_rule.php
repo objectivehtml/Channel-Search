@@ -32,6 +32,28 @@ abstract class Base_rule {
 		
 	}
 	
+	
+	/**
+	 * Get the input value and set a default if desired
+	 *
+	 * @access	public
+	 * @return	string
+	 */
+	public function input($name, $default = FALSE)
+	{
+		$EE =& get_instance();
+		
+		$value = $EE->input->get_post($name, TRUE);
+		
+		if($value === FALSE)
+		{
+			$value = $default;
+		}
+		
+		return $value;
+	}
+	
+	
 	/**
 	 * Display the label
 	 *
