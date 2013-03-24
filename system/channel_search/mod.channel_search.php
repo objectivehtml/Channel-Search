@@ -29,12 +29,17 @@ class Channel_search {
 		return $vars;
 	}
 	
-	public function url()
+	public function export_url()
+	{
+		return $this->url(array(
+			'export' => 'true'
+		));
+	}
+	
+	public function url($params = array())
 	{
 		$this->_cache_post();
-		
-		$params = array();
-		
+	
 		foreach(array_merge($_GET, $_POST) as $index => $value)
 		{
 			if(is_array($value))
@@ -147,6 +152,28 @@ class Channel_search {
 		$form = preg_replace('/{form:.+}/', '', $form);
 		
 		return $form;
+	}
+	
+	public function total_results()
+	{
+		$id      = $this->param('id', FALSE, FALSE, TRUE);	
+		$results = $this->EE->channel_search_lib->search($id, 'entry_id', 'asc', 'all', 0, $this->param('export', FALSE, TRUE));
+		
+		if(!$this->EE->TMPL->tagdata)
+		{
+			return $results->grand_total;
+		}
+		else
+		{
+			$prefix = $this->param('prefix', '');
+			
+			return $this->parse(array(
+				array(
+					$prefix.'total_results' => $results->grand_total,
+					$prefix.'data' 			=> $results->result_array()
+				)
+			));
+		}
 	}
 	
 	public function results()
@@ -311,6 +338,27 @@ class Channel_search {
 		return $tagdata;
 	}
 	*/
+	
+	public function set()
+	{
+		if($value = $this->EE->TMPL->tagdata)
+		{
+			$name = $this->param('name', (isset($this->EE->TMPL->tagparts[2]) ? $this->EE->TMPL->tagparts[2] : FALSE));
+			
+			if($name)
+			{
+				if($type = $this->param('type', 'get') == 'get')
+				{
+					$_GET[$name] = $value;
+				}
+				else
+				{
+					$_POST[$name] = $value;
+				}
+			}
+		}
+		
+	}
 	
 	public function get()
 	{
