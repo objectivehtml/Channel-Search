@@ -55,6 +55,27 @@ abstract class Base_rule {
 	
 	
 	/**
+	 * Get values from the userdata array. If no index is passed the
+	 * entire array is returned.
+	 *
+	 * @access	public
+	 * @param	string 	The name of the userdata index
+	 * @return	mixed
+	 */
+	 
+	public function userdata($index = FALSE)
+	{
+		$EE =& get_instance();
+		
+		if(!$index)
+		{
+			return $EE->session->userdata;
+		}
+		
+		return $EE->session->userdata($index);
+	}
+	
+	/**
 	 * Display the label
 	 *
 	 * @access	public

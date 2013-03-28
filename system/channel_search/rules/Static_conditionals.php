@@ -71,6 +71,7 @@ class Static_conditionals_channel_search_rule extends Base_rule {
 				}
 				
 				$value = $EE->db->escape($rule->value);
+				$value = str_replace('CURRENT_USER', $this->userdata('member_id'), $value);
 				
 				if(!empty($value))
 				{

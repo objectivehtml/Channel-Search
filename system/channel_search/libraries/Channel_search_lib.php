@@ -96,6 +96,7 @@ class Channel_search_lib {
 		$field_array = array();
 		
 		$channels = array();
+		$statuses = array();
 		
 		foreach($channel_names as $channel_name)
 		{
@@ -107,6 +108,17 @@ class Channel_search_lib {
 				$channel 		 = $channel->row();
 				$channels[]      = $channel;
 				$channel_where[] = 'exp_channel_titles.channel_id = '.$channel->channel_id;
+				
+				$status = $this->EE->channel_data->get_statuses(array(
+					'where' => array(
+						'group_id' => $channel->status_group
+					)
+				));
+				
+				foreach($status->result() as $status)
+				{
+					$statuses[] = $status->status;	
+				}
 				
 				$fields  = $this->EE->channel_data->get_fields(array(
 					'where' => array(
@@ -293,6 +305,8 @@ class Channel_search_lib {
 		
 		$response = (object) array(
 			'response' => $has_searched ? $this->EE->db->query($sql) : FALSE,
+			'fields'   => $fields,
+			'statuses' => $statuses,
 			'channels' => implode('|', $channel_names),
 			'has_searched'     => $has_searched ? TRUE : FALSE,
 			'has_not_searched' => $has_searched ? FALSE : TRUE,

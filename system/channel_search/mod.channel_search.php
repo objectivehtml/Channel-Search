@@ -256,6 +256,7 @@ class Channel_search {
 				'entry_id'    => implode($entry_ids, '|'),
 				'fixed_order' => implode($entry_ids, '|'),
 				'limit'       => $limit,
+				'status' 	  => implode('|', $results->statuses)
 			));
 		}
 		
