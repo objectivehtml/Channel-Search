@@ -24,6 +24,7 @@ class Channel_search_mcp {
 		$this->EE->load->helper('channel_search');
 		$this->EE->load->helper('addon');
 		$this->EE->load->model('channel_search_model');
+		$this->EE->load->library('channel_search_lib');
 		
 		if(!isset($this->EE->theme_loader))
 		{
@@ -55,7 +56,7 @@ class Channel_search_mcp {
 		');
 
 
-		$this->EE->load->library('search_rules');
+		$this->EE->load->library('channel_search_rules');
 	}
 	
 	public function index()
@@ -107,9 +108,9 @@ class Channel_search_mcp {
 			'order_url'     => $this->cp_url('order_rule'),
 			'edit_url'      => $this->cp_url('edit_rule'),
 			'delete_url'    => $this->cp_url('delete_rule_action'),
-			'xid'           => $this->EE->security->generate_xid(),
+			'xid'           => $this->EE->channel_search_lib->generate_xid(),
 			'action'        => $this->cp_url('new_rule'),
-			'dropdown'      => $this->EE->search_rules->dropdown(),
+			'dropdown'      => $this->EE->channel_search_rules->dropdown(),
 			'modifiers'     => $this->EE->channel_search_model->get_rule_modifiers($id, array(
 				'order_by'  => 'order',
 				'sort'      => 'asc'
@@ -124,7 +125,7 @@ class Channel_search_mcp {
 		$rule_id = $this->EE->input->get_post('rule_id');
 		
 		$rule 	 = $this->EE->input->get_post('rule');
-		$rule 	 = $this->EE->search_rules->get_rule($rule);
+		$rule 	 = $this->EE->channel_search_rules->get_rule($rule);
 		
 		$this->EE->cp->set_variable('cp_page_title', lang('channel_search_new_rule') . $rule->get_title());
 		$this->EE->cp->set_right_nav(array('Back to Home' => $this->cp_url('index')));
@@ -140,7 +141,7 @@ class Channel_search_mcp {
 			'header'        => $rule->display_header(),
 			'description'   => $rule->display_description(),
 			'display_rule'  => $rule->display_rule(),
-			'xid'           => $this->EE->security->generate_xid(),
+			'xid'           => $this->EE->channel_search_lib->generate_xid(),
 			'action'        => cp_url('Channel_search', 'new_rule_action')
 		);
 		
@@ -155,7 +156,7 @@ class Channel_search_mcp {
 		
 		$data = json_decode($modifier->row('rules'));
 		
-		$rule = $this->EE->search_rules->get_rule($modifier->row('modifier'));
+		$rule = $this->EE->channel_search_rules->get_rule($modifier->row('modifier'));
 		
 		$this->EE->cp->set_variable('cp_page_title', lang('channel_search_edit_rule') . $rule->get_title());
 		$this->EE->cp->set_right_nav(array(lang('channel_search_back_to_rules') => $this->cp_url('manage_rules') . '&id='.$modifier->row('rule_id')));
@@ -172,7 +173,7 @@ class Channel_search_mcp {
 			'header'       => $rule->display_header(),
 			'description'  => $rule->display_description(),
 			'display_rule' => $rule->display_rule($data),
-			'xid'          => $this->EE->security->generate_xid(),
+			'xid'          => $this->EE->channel_search_lib->generate_xid(),
 			'action'       => cp_url('Channel_search', 'edit_rule_action')
 		);
 		
@@ -263,7 +264,7 @@ class Channel_search_mcp {
 		$vars = array(
 			'type'          => 'New',
 			'button_text'   => 'Create Rule',
-			'xid'           => $this->EE->security->generate_xid(),
+			'xid'           => $this->EE->channel_search_lib->generate_xid(),
 			'settings'      => InterfaceBuilder::table($fields, array(), array(), channel_search_attr()),
 			'action'        => cp_url('Channel_search', 'new_search_action')
 		);
@@ -297,7 +298,7 @@ class Channel_search_mcp {
 		$vars = array(
 			'type'          => 'Edit',
 			'id'			=> $id,
-			'xid'           => $this->EE->security->generate_xid(),
+			'xid'           => $this->EE->channel_search_lib->generate_xid(),
 			'button_text'   => 'Save Changes',
 			'settings'      => InterfaceBuilder::table($fields, $search, array(), channel_search_attr()),
 			'action'        => cp_url('Channel_search', 'edit_search_action')

@@ -10,26 +10,46 @@ abstract class Base_rule {
 	
 	protected $header;
 		
-	protected $fields   = array();
+	protected $var_prefix     = 'search';
 	
-	protected $from     = array();
+	protected $export_trigger = FALSE;
 	
-	protected $group_by = array();
+	protected $fields         = array();
 	
-	protected $having   = array();
+	protected $from           = array();
 	
-	protected $join     = array();
+	protected $group_by       = array();
+	
+	protected $having         = array();
+	
+	protected $join           = array();
 			
-	protected $select   = array();
+	protected $select         = array();
 	
-	protected $where    = array();
+	protected $where          = array();
 	
-	protected $settings = array();
+	protected $vars           = array();
+	
+	protected $settings       = array();
 	
 	
 	public function __construct()
 	{
 		
+	}
+	
+	
+	/**
+	 * Get the input value and set a default if desired
+	 *
+	 * @access	public
+	 * @return	string
+	 */
+	public function add_prefix($vars = array())
+	{
+		$EE =& get_instance();
+		
+		return $EE->channel_data->utility->add_prefix($this->var_prefix, $vars);
 	}
 	
 	
@@ -120,6 +140,19 @@ abstract class Base_rule {
 		$properties = array_merge($default_properties, $properties);
 		
 		return InterfaceBuilder::table($this->fields, $data, $properties, channel_search_attr());
+	}
+	
+	
+	/**
+	* Get the export_trigger
+	*
+	* @access	public
+	* @return	array
+	*/
+	
+	public function get_export_trigger()
+	{
+		return $this->export_trigger ? $this->export_trigger : $this->get_name();
 	}
 	
 	
@@ -289,6 +322,24 @@ abstract class Base_rule {
 	public function get_where()
 	{
 		return $this->where;
+	}
+	
+	
+	/**
+	* Get the template vars
+	*
+	* @access	public
+	* @return	array
+	*/
+	
+	public function get_vars($vars = FALSE)
+	{
+		if(!$vars)
+		{
+			$vars = $this->vars;
+		}
+		
+		return $this->add_prefix($vars);
 	}
 	
 	

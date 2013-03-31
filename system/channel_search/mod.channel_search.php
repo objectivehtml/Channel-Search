@@ -8,7 +8,7 @@ class Channel_search {
 		
 		$this->EE->lang->loadfile('channel_search');
 		$this->EE->load->library('channel_search_lib');
-		$this->EE->load->library('search_rules');
+		$this->EE->load->library('channel_search_rules');
 		$this->EE->load->helper('addon');
 	}
 	
@@ -157,7 +157,7 @@ class Channel_search {
 	public function total_results()
 	{
 		$id      = $this->param('id', FALSE, FALSE, TRUE);	
-		$results = $this->EE->channel_search_lib->search($id, 'entry_id', 'asc', 'all', 0, $this->param('export', FALSE, TRUE));
+		$results = $this->EE->channel_search_lib->search($id, 'entry_id', 'asc', 'all', 0, $this->param('export', FALSE));
 		
 		if(!$this->EE->TMPL->tagdata)
 		{
@@ -192,7 +192,7 @@ class Channel_search {
 			$offset = ($page - 1) * $limit;
 		}	
 		
-		$results = $this->EE->channel_search_lib->search($id, $order_by, $sort, $limit, $offset, $this->param('export', FALSE, TRUE));
+		$results = $this->EE->channel_search_lib->search($id, $order_by, $sort, $limit, $offset, $this->param('export', FALSE));
 		
 		if(!$limit)
 		{
@@ -201,7 +201,14 @@ class Channel_search {
 		
 		if($results === FALSE || ($results->has_searched && ($results->response === FALSE || $results->response->num_rows() == 0)))
 		{
-			return $this->EE->TMPL->no_results();
+			$vars = array();
+			
+			foreach($results->rules as $rule)
+			{
+				$vars = array_merge($vars, $rule->get_vars());
+			}
+			
+			return $this->parse(array($vars), $this->EE->TMPL->no_results());
 		}
 		
 		$vars = array(
@@ -361,13 +368,27 @@ class Channel_search {
 		
 	}
 	
+	public function reset()
+	{
+		$name = $this->param('name', isset($this->EE->TMPL->tagparts[2]) ? $this->EE->TMPL->tagparts[2] : false);
+		
+		unset($_GET[$name]);
+		unset($_POST[$name]);
+	}
+	
 	public function get()
 	{
 		$default = $this->param('default', NULL);
+		$name    = $this->param('name', isset($this->EE->TMPL->tagparts[2]) ? $this->EE->TMPL->tagparts[2] : false);
+		$return  = $this->EE->input->get_post($name);
+		$return  = $return !== FALSE ? $return : $default;
 		
-		$return = $this->EE->input->get_post($this->EE->TMPL->tagparts[2]);
+		if($format = $this->param('format'))
+		{
+			$return = date($format, strtotime($return));	
+		}
 		
-		return $return !== FALSE ? $return : $default; 
+		return $return; 
 	}
 	
 	private function parse($vars, $tagdata = FALSE)

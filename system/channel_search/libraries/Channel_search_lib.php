@@ -139,11 +139,14 @@ class Channel_search_lib {
 		
 		$required_where[] = implode(' AND ', $channel_where);
 		
+		$rules = array();
+		
 		foreach($rule_data->result() as $row)
 		{
 			$row->rules = json_decode($row->rules);
 			
-			$rule = $this->EE->search_rules->get_rule($row->modifier);
+			$rule = $this->EE->channel_search_rules->get_rule($row->modifier);
+			
 			$rule->set_settings($row);
 			$rule->set_fields($field_array);
 			$rule->set_channels($channels);
@@ -189,7 +192,9 @@ class Channel_search_lib {
 					'clause' => $row->search_clause,
 					'rule'   => $rule_where
 				);
-			}		
+			}
+			
+			$rules[$rule->get_export_trigger()] = $rule;		
 		}
 		
 		if(count($join) > 0)
@@ -265,24 +270,12 @@ class Channel_search_lib {
 		
 		if($export)
 		{
-			$this->EE->load->dbutil();
+			$this->EE->load->library('channel_search_export');
 			
-			$csv = $this->EE->dbutil->csv_from_result($this->EE->db->query($sql));
-			
-			header("Pragma: public");
-			header("Expires: 0");
-			header("Cache-Control: must-revalidate, post-check=0, pre-check=0");
-			header("Cache-Control: private",false);
-			header("Content-Type: application/octet-stream");
-			header("Content-Disposition: attachment; filename=\"search-results-".date('Y-m-d-H-i', time()).".csv\";" );
-			header("Content-Transfer-Encoding: binary"); 
-			
-			exit($csv);
+			$this->EE->channel_search_export->trigger($export, $sql, $rules);	
 		}
 		
 		$sql .= ($limit > 0 ? ' LIMIT '.$offset.','.$limit : NULL);
-		
-		// var_dump($sql);exit();
 		
 		$has_searched = FALSE;
 		
@@ -303,6 +296,13 @@ class Channel_search_lib {
 			$has_searched = TRUE;
 		}
 		
+		if($has_searched)
+		{
+			$this->EE->load->model('channel_search_history');
+			
+			$this->EE->channel_search_history->insert_history($id, array_merge($_GET, $_POST), trim($sql));
+		}
+		
 		$response = (object) array(
 			'response' => $has_searched ? $this->EE->db->query($sql) : FALSE,
 			'fields'   => $fields,
@@ -310,6 +310,7 @@ class Channel_search_lib {
 			'channels' => implode('|', $channel_names),
 			'has_searched'     => $has_searched ? TRUE : FALSE,
 			'has_not_searched' => $has_searched ? FALSE : TRUE,
+			'rules'	   => $rules,
 			'id'       => $id,
 			'order_by' => $order_by,
 			'sort'     => $sort,
@@ -660,4 +661,36 @@ class Channel_search_lib {
 		return $base_url;
 	}
 	
+	/**
+	 * Generate Security Hash
+	 *
+	 * @return String XID generated
+	 */
+	public function generate_xid($count = 1, $array = FALSE)
+	{
+		if(!method_exists($this->EE->security, 'generate_id'))
+		{
+			$hashes = array();
+			$inserts = array();
+	
+			for ($i = 0; $i < $count; $i++)
+			{
+				$hash = $this->EE->functions->random('encrypt');
+				$inserts[] = array(
+					'hash' 		   => $hash,
+					'ip_address'   => $this->EE->input->ip_address(),
+					'date' 		   => $this->EE->localize->now
+				);	
+				
+				$hashes[] = $hash;	
+			}
+			
+			$this->EE->db->insert_batch('security_hashes', $inserts);
+	
+			return (count($hashes) > 1 OR $array) ? $hashes : $hashes[0];
+		}
+		
+		return $this->EE->security->generate_xid();
+	}
+		
 }

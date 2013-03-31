@@ -27,6 +27,87 @@ class Channel_search_upd {
 	public $version = CHANNEL_SEARCH_VERSION;
 	
 	private $tables = array(
+		'channel_search_terms' => array(
+			'id'	=> array(
+				'type'				=> 'int',
+				'constraint'		=> 100,
+				'primary_key'		=> TRUE,
+				'auto_increment'	=> TRUE
+			),
+			'site_id' => array(
+				'type'			=> 'int',
+				'constraint' 	=> 11
+			),
+			'search_id' => array(
+				'type'			=> 'varchar',
+				'constraint' 	=> 200
+			),
+			'history_id' => array(
+				'type'			=> 'int',
+				'constraint' 	=> 11
+			),
+			'ip_address' => array(
+				'type'			=> 'varchar',
+				'constraint' 	=> 200
+			),
+			'member_id' => array(
+				'type'			=> 'int',
+				'constraint' 	=> 11
+			),
+			'term' => array(
+				'type'			=> 'longtext',
+			),
+			'total_chars' => array(
+				'type'			=> 'int',
+				'constraint' 	=> 11
+			),
+			'total_words' => array(
+				'type'			=> 'int',
+				'constraint' 	=> 11
+			),
+			'date' => array(
+				'type'			=> 'timestamp',
+			),
+		),
+		'channel_search_history' => array(
+			'id'	=> array(
+				'type'				=> 'int',
+				'constraint'		=> 100,
+				'primary_key'		=> TRUE,
+				'auto_increment'	=> TRUE
+			),
+			'site_id' => array(
+				'type'			=> 'int',
+				'constraint' 	=> 11
+			),
+			'search_id' => array(
+				'type'			=> 'varchar',
+				'constraint' 	=> 200
+			),
+			'ip_address' => array(
+				'type'			=> 'varchar',
+				'constraint' 	=> 200
+			),
+			'member_id' => array(
+				'type'			=> 'int',
+				'constraint' 	=> 11
+			),
+			'terms' => array(
+				'type'			=> 'longtext',
+			),
+			'params' => array(
+				'type'			=> 'longtext',
+			),
+			'query' => array(
+				'type'			=> 'longtext',
+			),
+			'sql' => array(
+				'type'			=> 'longtext',
+			),
+			'date' => array(
+				'type'			=> 'timestamp',
+			),
+		),		
 		'channel_search_rules' => array(
 			'id'	=> array(
 				'type'				=> 'int',

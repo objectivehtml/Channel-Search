@@ -58,6 +58,15 @@ class Channel_search_ext {
 				
 				$result[$index]['distance'] = isset($response[$index]->distance) ? $response[$index]->distance : 'N/A';
 			}
+				
+			$vars = array();
+				
+			foreach($cache->rules as $rule)
+			{
+				$vars = array_merge($vars, $rule->get_vars());
+			}
+			
+			$obj->EE->TMPL->tagdata = $obj->EE->TMPL->parse_variables_row($obj->EE->TMPL->tagdata, (array) $vars);
 		}
 		
 		return $result;
