@@ -668,7 +668,7 @@ class Channel_search_lib {
 	 */
 	public function generate_xid($count = 1, $array = FALSE)
 	{
-		if(!method_exists($this->EE->security, 'generate_id'))
+		if(!method_exists($this->EE->security, 'generate_xid'))
 		{
 			$hashes = array();
 			$inserts = array();
