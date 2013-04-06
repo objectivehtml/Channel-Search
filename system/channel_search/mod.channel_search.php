@@ -12,6 +12,11 @@ class Channel_search {
 		$this->EE->load->helper('addon');
 	}
 	
+	public function current_url()
+	{
+		return page_url(TRUE, TRUE, FALSE);
+	}
+	
 	public function vars($return_vars = FALSE)
 	{
 		$vars = array();
