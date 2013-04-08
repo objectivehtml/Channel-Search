@@ -344,6 +344,24 @@ abstract class Base_rule {
 	
 	
 	/**
+	* Get the template vars during the results loop
+	*
+	* @access	public
+	* @return	array
+	*/
+	
+	public function get_vars_row($vars = FALSE)
+	{
+		if(!$vars)
+		{
+			$vars = $this->vars;
+		}
+		
+		return $this->add_prefix($vars);
+	}
+	
+	
+	/**
 	* Sets the fields array
 	*
 	* @access	public

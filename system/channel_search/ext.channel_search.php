@@ -38,7 +38,7 @@ class Channel_search_ext {
 		
 		if(isset($this->EE->session->cache['channel_search']['search_results']))
 		{
-			$cache = $this->EE->session->cache['channel_search']['search_results'];
+			$cache 	  = $this->EE->session->cache['channel_search']['search_results'];
 			$response = $cache->response->result();
 			
 			$result[0]['is_first_row'] = TRUE;
@@ -54,6 +54,11 @@ class Channel_search_ext {
 				if($index < count($result) - 1)
 				{
 					$result[$index]['is_last_row'] = FALSE;
+				}
+					
+				foreach($cache->rules as $rule)
+				{
+					$result[$index] = array_merge($result[$index], $rule->get_vars_row($row));
 				}
 				
 				$result[$index]['distance'] = isset($response[$index]->distance) ? $response[$index]->distance : 'N/A';

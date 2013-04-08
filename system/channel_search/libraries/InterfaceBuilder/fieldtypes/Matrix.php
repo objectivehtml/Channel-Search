@@ -33,6 +33,13 @@ class Matrix_IBFieldType extends InterfaceBuilderField {
 			{
 				$name = $column['name'];
 				
+				$width = NULL;
+				
+				if(isset($column['width']))
+				{
+					$width = ' width="'.$column['width'].'"';
+				}
+				
 				if(isset($column['title']))
 				{
 					$column = $column['title'];
@@ -44,7 +51,7 @@ class Matrix_IBFieldType extends InterfaceBuilderField {
 			}
 			
 			
-			$html[] = '<th data-col="'.$name.'">'.$column.'</th>';
+			$html[] = '<th data-col="'.$name.'"'.$width.'>'.$column.'</th>';
 		}
 
 		$html[] = '<th style="width:40px"></th>';	
