@@ -384,13 +384,15 @@ class Channel_search {
 	public function get()
 	{
 		$default = $this->param('default', NULL);
+		
 		$name    = $this->param('name', isset($this->EE->TMPL->tagparts[2]) ? $this->EE->TMPL->tagparts[2] : false);
 		$return  = $this->EE->input->get_post($name);
-		$return  = $return !== FALSE ? $return : $default;
+		
+		$return  = $return !== FALSE && !empty($return)? $return : $default;
 		
 		if($format = $this->param('format'))
 		{
-			$return = date($format, strtotime($return));	
+			$return = date(str_replace('%', '', $format), preg_match('/^\d*$/', $return) ? $return : strtotime($return));	
 		}
 		
 		return $return; 
