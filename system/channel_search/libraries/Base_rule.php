@@ -350,14 +350,9 @@ abstract class Base_rule {
 	* @return	array
 	*/
 	
-	public function get_vars_row($vars = FALSE)
+	public function get_vars_row()
 	{
-		if(!$vars)
-		{
-			$vars = $this->vars;
-		}
-		
-		return $this->add_prefix($vars);
+		return array();
 	}
 	
 	
