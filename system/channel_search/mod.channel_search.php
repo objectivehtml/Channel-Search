@@ -12,9 +12,88 @@ class Channel_search {
 		$this->EE->load->helper('addon');
 	}
 	
+	public function _setter()
+	{
+		if($this->EE->TMPL->tagparams)
+		{
+			foreach(array('set', 'unset') as $type)
+			{
+				foreach($this->EE->TMPL->tagparams as $param => $value)
+				{
+					$pattern = '/^'.$type.':/';
+					
+					if(preg_match($pattern, $param))
+					{
+						$param = preg_replace($pattern, '', $param);
+						
+						if($type == 'set')
+						{
+							$_GET[$param]  = $value;
+							$_POST[$param] = $value;
+						}
+						else
+						{
+							unset($this->EE->TMPL->tagparams[$param]);
+							
+							unset($_GET[$param]);
+							unset($_POST[$param]);	
+						}
+					}
+				}
+			}
+		}
+	}
+	
 	public function current_url()
 	{
-		return page_url(TRUE, TRUE, FALSE);
+		return page_url(TRUE, $this->param('params', TRUE, TRUE), FALSE);
+	}
+	
+	public function set_default()
+	{	
+		$name    = $this->param('name', $this->param('var'));
+		$not_set = explode('|', $this->param('not_set', ''));
+		
+		if($name && !$this->EE->input->get_post($name))
+		{
+			$is_set = FALSE;
+			
+			if(is_array($not_set))
+			{
+				foreach($not_set as $var)
+				{
+					if($this->EE->input->get_post($var))
+					{
+						$is_set = TRUE;
+					}		
+				}
+				
+				if(!$is_set)
+				{
+					$value = trim($this->param('value', $this->EE->TMPL->tagdata));
+				
+					$_GET[$name]  = $value;
+					$_POST[$name] = $value;
+				}
+			}
+		}
+	}
+	
+	public function is_set()
+	{		
+		$name = $this->param('name', $this->param('var'));
+		
+		if($name && $this->EE->input->get_post($name))
+		{
+			return TRUE;
+		}
+		
+		return FALSE;
+	}
+	
+	public function is_not_set()
+	{		
+		return $this->is_set() ? FALSE : TRUE;
 	}
 	
 	public function vars($return_vars = FALSE)
@@ -43,6 +122,10 @@ class Channel_search {
 	
 	public function url($params = array())
 	{
+		$get  = $_GET;
+		$post = $_POST;
+		
+		$this->_setter();
 		$this->_cache_post();
 	
 		foreach(array_merge($_GET, $_POST) as $index => $value)
@@ -55,11 +138,20 @@ class Channel_search {
 			$params[$index] = $value;
 		}
 		
-		return page_url(TRUE, FALSE) . '?' . http_build_query($params);
+		$return = page_url(TRUE, FALSE) . '?' . http_build_query($params);
+		
+		$_GET  = $get;
+		$_POST = $post;
+		
+		return $return;
 	}
 	
 	public function form()
 	{
+		$get  = $_GET;
+		$post = $_POST;
+		
+		$this->_setter();
 		$this->_cache_post();
 		
 		$vars   = array();
@@ -155,34 +247,51 @@ class Channel_search {
 		
 		$form = '<form '.trim($attribute_string).'>'.$this->parse($vars).'</form>';
 		$form = preg_replace('/{form:.+}/', '', $form);
+				
+		$_GET  = $get;
+		$_POST = $post;
 		
 		return $form;
 	}
 	
 	public function total_results()
 	{
+		$get  = $_GET;
+		$post = $_POST;
+		
+		$this->_setter();
+		
 		$id      = $this->param('id', FALSE, FALSE, TRUE);	
 		$results = $this->EE->channel_search_lib->search($id, 'entry_id', 'asc', 'all', 0, $this->param('export', FALSE));
 		
 		if(!$this->EE->TMPL->tagdata)
 		{
-			return $results->grand_total;
+			$return = $results->grand_total;
 		}
 		else
 		{
 			$prefix = $this->param('prefix', '');
 			
-			return $this->parse(array(
+			$return = $this->parse(array(
 				array(
 					$prefix.'total_results' => $results->grand_total,
 					$prefix.'data' 			=> $results->result_array()
 				)
 			));
-		}
+		}		
+		
+		$_GET  = $get;
+		$_POST = $post;
+		
+		return $return;
 	}
 	
 	public function results()
 	{
+		$get  = $_GET;
+		$post = $_POST;
+		
+		$this->_setter();
 		$this->_cache_post();
 		
 		$id       = $this->param('id', FALSE);		
@@ -274,6 +383,9 @@ class Channel_search {
 		
 		$this->EE->TMPL->tagdata = $this->parse(array($vars));
 		
+		$_GET  = $get;
+		$_POST = $post;
+		
 		return $this->EE->TMPL->tagdata;
 	}
 	
@@ -296,61 +408,6 @@ class Channel_search {
 			}
 		}
 	}
-	
-	/*
-	public function results()
-	{
-		$this->EE->load->helper('url');
-		
-		$id       = $this->param('id', FALSE, TRUE);
-		$order_by = $this->param('order_by', 'entry_id');
-		$sort     = $this->param('sort', 'desc');
-		$limit    = $this->param('limit', 20);
-		$page     = (float) $this->param('page');
-		$offset   = $this->param('offset', 0);
-		
-		if($page)
-		{
-			$offset = $limit * $page - $limit;
-		}
-		
-		$results = $this->EE->channel_search_lib->search($id, $order_by, $sort, $limit, $offset);
-		
-		if($results->response->num_rows() == 0)
-		{
-			return $this->EE->TMPL->no_results();	
-		}
-		
-		$return = array();
-		$tagdata = NULL;
-		
-		foreach($results->response->result() as $index => $row)
-		{		
-			$row->index         = $index;
-			$row->count         = $index + 1;
-			$row->limit         = $limit;
-			$row->offset        = $offset;
-			$row->sort          = $sort;
-			$row->order_by      = $order_by;
-			$row->total_results = $results->response->num_rows();
-			$row->grand_total   = $results->grand_total;
-			$row->current_page	= $page;
-			$row->first_page	= 1;
-			$row->last_page		= ceil($results->grand_total / $limit);
-			$row->is_first_page = $page == 1 ? TRUE : FALSE;
-			$row->is_last_page  = $page == $row->last_page ? TRUE : FALSE;
-			$row->total_pages	= $row->last_page;
-			$row->next_page		= $row->total_pages > ($page+1) ? $page+1 : $page;
-			$row->prev_page		= ($page - 1) > 0 ? $page-1 : 1;			
-			$row->next_page_url = $this->EE->channel_search_lib->get_url($page+1);						
-			$row->prev_page_url = $this->EE->channel_search_lib->get_url($page-1);
-						
-			$tagdata .= $this->EE->channel_search_lib->parse($row);			
-		}
-		
-		return $tagdata;
-	}
-	*/
 	
 	public function set()
 	{
@@ -384,15 +441,13 @@ class Channel_search {
 	public function get()
 	{
 		$default = $this->param('default', NULL);
-		
 		$name    = $this->param('name', isset($this->EE->TMPL->tagparts[2]) ? $this->EE->TMPL->tagparts[2] : false);
 		$return  = $this->EE->input->get_post($name);
-		
-		$return  = $return !== FALSE && !empty($return)? $return : $default;
+		$return  = $return !== FALSE ? $return : $default;
 		
 		if($format = $this->param('format'))
 		{
-			$return = date(str_replace('%', '', $format), preg_match('/^\d*$/', $return) ? $return : strtotime($return));	
+			$return = date($format, strtotime($return));	
 		}
 		
 		return $return; 
