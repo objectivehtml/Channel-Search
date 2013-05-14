@@ -125,6 +125,10 @@ class Channel_search_upd {
 			'get_trigger' => array(
 				'type'			=> 'varchar',
 				'constraint' 	=> 200
+			),
+			'prevent_search_trigger' => array(
+				'type'			=> 'varchar',
+				'constraint' 	=> 200
 			)
 		),
 		'channel_search_modifiers' => array(
@@ -168,8 +172,7 @@ class Channel_search_upd {
 	);
 	
 	private $hooks = array(
-		array('channel_entries_query_result', 'channel_entries_query_result'),
-		array('channel_entries_tagdata_end', 'channel_entries_tagdata_end', '', 100)
+		array('channel_entries_query_result', 'channel_entries_query_result')
 	);
 	
     public function __construct()

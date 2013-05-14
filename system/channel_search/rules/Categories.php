@@ -110,6 +110,7 @@ class Categories_channel_search_rule extends Base_rule {
 		
 		foreach($categories as $cat_index => $category)
 		{
+			$new_array[strtolower($cat_index)] = $category;
 			$new_array[strtolower($cat_index)]->cat_name = $category->cat_name;
 		}
 		

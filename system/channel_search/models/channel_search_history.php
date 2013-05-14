@@ -307,7 +307,10 @@ class Channel_search_history extends CI_Model {
 		{
 			if(!empty($data))
 			{
-				$terms[] = trim($data);
+				if(!is_array($data) && !is_object($data))
+				{
+					$terms[] = trim($data);
+				}
 			}
 		}
 		
@@ -316,7 +319,17 @@ class Channel_search_history extends CI_Model {
 	
 	private function _term_string($form_data = array())
 	{
-		return trim(str_replace("\n\n", "\n", implode("\n", $form_data)));
+		$form = array();
+		
+		foreach($form_data as $index => $data)
+		{
+			if(!is_array($data) && !is_object($data))
+			{
+				$form[$index] = $data;
+			}
+		}
+		
+		return trim(str_replace("\n\n", "\n", implode("\n", $form)));
 	}
 	
 }
