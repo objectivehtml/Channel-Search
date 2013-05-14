@@ -31,24 +31,6 @@ class Channel_search_ext {
         $this->version	= config_item('channel_search_version');
 	}
 	
-	public function channel_entries_tagdata_end($tagdata, $row, $obj)
-	{
-		if(isset($this->EE->session->cache['channel_search']['search_results']))
-		{
-			$cache = $this->EE->session->cache['channel_search']['search_results'];
-			
-			$vars = array();
-			
-			foreach($cache->rules as $rule)
-			{
-				$vars = array_merge($vars, $rule->get_vars_row($row));
-			}
-			
-			$tagdata = $this->EE->TMPL->parse_variables_row($tagdata, $vars);			
-		}
-		
-		return $tagdata;
-	}
 	
 	public function channel_entries_query_result($obj, $result)
 	{
@@ -56,7 +38,7 @@ class Channel_search_ext {
 		
 		if(isset($this->EE->session->cache['channel_search']['search_results']))
 		{
-			$cache 	  = $this->EE->session->cache['channel_search']['search_results'];
+			$cache = $this->EE->session->cache['channel_search']['search_results'];
 			$response = $cache->response->result();
 			
 			$result[0]['is_first_row'] = TRUE;
@@ -73,11 +55,8 @@ class Channel_search_ext {
 				{
 					$result[$index]['is_last_row'] = FALSE;
 				}
-					
-				foreach($cache->rules as $rule)
-				{
-					$result[$index] = array_merge($result[$index], $rule->get_vars_row($row));
-				}
+				
+				$result[$index]['distance'] = isset($response[$index]->distance) ? $response[$index]->distance : 'N/A';
 			}
 				
 			$vars = array();

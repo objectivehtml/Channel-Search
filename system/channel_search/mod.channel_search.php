@@ -44,6 +44,42 @@ class Channel_search {
 		}
 	}
 	
+	public function entry_has_category()
+	{
+		$entry_id = $this->param('entry_id', FALSE, FALSE, TRUE);
+		$posts    = $this->EE->channel_data->get_category_post($entry_id);
+		$value    = 0;
+		
+		$where = array();
+		
+		foreach(array('cat_id', 'cat_url_title', 'cat_name') as $var)
+		{
+			if($value = $this->param($var))
+			{
+				$where[$var] = $value;
+			}
+		}
+		
+		$category = $this->EE->channel_data->get_categories(array(
+			'where' => $where
+		));
+		
+		if($category->num_rows() > 0)
+		{
+			$value = $category->row('cat_id');
+		}
+		
+		foreach($posts->result() as $post)
+		{
+			if($post->cat_id == $value)
+			{
+				return TRUE;
+			}
+		}
+		
+		return FALSE;
+	}
+	
 	public function current_url()
 	{
 		return page_url(TRUE, $this->param('params', TRUE, TRUE), FALSE);

@@ -55,7 +55,14 @@ class Channel_search_lib {
 	}
 	
 	public function search($id, $order_by = 'exp_channel_titles.entry_id', $sort = 'DESC', $limit = 20, $offset = 0, $export = FALSE)
-	{
+	{	
+		$orig_get  = $_GET;		
+		$orig_post = $_POST;
+		
+		$orig_vars = array_merge($orig_get, $orig_post);
+				
+		$prevent_search = FALSE;
+		
 		$search = $this->EE->channel_search_model->get_rule_by_id($id);
 		
 		if($search->num_rows() == 0)
@@ -69,6 +76,22 @@ class Channel_search_lib {
 		if($rule_data->num_rows() == 0)
 		{
 			return FALSE;
+		}
+		
+		if(!empty($search->prevent_search_trigger))
+		{
+			$prevent_triggers = explode(',', $search->prevent_search_trigger);
+			
+			foreach($prevent_triggers as $trigger)
+			{
+				if(isset($orig_vars[trim($trigger)]))
+				{
+					$prevent_search = TRUE;
+					
+					$_GET  = array();
+					$_POST = array();
+				}
+			}
 		}
 		
 		$from     = array();
@@ -318,6 +341,12 @@ class Channel_search_lib {
 			'offset'   => $offset,
 			'grand_total' => $this->EE->db->query('SELECT FOUND_ROWS() as \'total\'')->row('total'),
 		);
+		
+		if($prevent_search)
+		{
+			$_GET  = $orig_get;
+			$_POST = $orig_post;
+		}
 		
 		return $response;
 	}

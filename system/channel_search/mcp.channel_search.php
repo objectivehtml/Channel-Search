@@ -185,7 +185,8 @@ class Channel_search_mcp {
 		$rule = array(
 			'search_id'     => $this->EE->input->post('search_id', TRUE),
 			'channel_names' => $this->EE->input->post('channel_names', TRUE),
-			'get_trigger'   => $this->EE->input->post('get_trigger', TRUE) 
+			'get_trigger'   => $this->EE->input->post('get_trigger', TRUE),
+			'prevent_search_trigger' => $this->EE->input->post('prevent_search_trigger', TRUE) 
 		);
 		
 		$rule_id = $this->EE->channel_search_model->create_rule($rule);
@@ -200,7 +201,8 @@ class Channel_search_mcp {
 		$rule = array(
 			'search_id'     => $this->EE->input->post('search_id', TRUE),
 			'channel_names' => $this->EE->input->post('channel_names', TRUE),
-			'get_trigger'   => $this->EE->input->post('get_trigger', TRUE) 
+			'get_trigger'   => $this->EE->input->post('get_trigger', TRUE),
+			'prevent_search_trigger' => $this->EE->input->post('prevent_search_trigger', TRUE)  
 		);
 		
 		$this->EE->channel_search_model->update_rule($id, $rule);
@@ -258,7 +260,12 @@ class Channel_search_mcp {
 				'label' => lang('channel_search_get_trigger'),
 				'description' => lang('channel_search_get_trigger_desc'),
 				'type'	=> 'input'
-			)	
+			),	
+			'prevent_search_trigger' => array(
+				'label' => lang('channel_search_prevent_search_trigger'),
+				'description' => lang('channel_search_prevent_search_trigger_desc'),
+				'type'	=> 'input'
+			)
 		);
 		
 		$vars = array(
@@ -291,6 +298,11 @@ class Channel_search_mcp {
 			'get_trigger' => array(
 				'label' => lang('channel_search_get_trigger'),
 				'description' => lang('channel_search_get_trigger_desc'),
+				'type'	=> 'input'
+			),
+			'prevent_search_trigger' => array(
+				'label' => lang('channel_search_prevent_search_trigger'),
+				'description' => lang('channel_search_prevent_search_trigger_desc'),
 				'type'	=> 'input'
 			)	
 		);

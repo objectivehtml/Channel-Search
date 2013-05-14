@@ -32,7 +32,7 @@ class Default_channel_search_rule extends Base_rule {
 					),
 					2 => array(
 						'name'  => 'operator',
-						'title' => 'Operator (>, >=, <, <=, =, !=, LIKE)'
+						'title' => 'Operator (>, >=, <, <=, =, !=, LIKE, STARTS, ENDS)'
 					),
 					3 => array(
 						'name'  => 'clause',
@@ -81,9 +81,23 @@ class Default_channel_search_rule extends Base_rule {
 					$rule->operator = '=';
 				}
 				
-				if($rule->operator == 'LIKE' && $value && !empty($value))
+				if(strtoupper($rule->operator) == 'LIKE' && $value && !empty($value))
 				{
 					$value = '%'.$value.'%';	
+				}
+				
+				if(strtoupper($rule->operator) == 'STARTS' && $value && !empty($value))
+				{
+					$rule->operator = 'LIKE';
+					
+					$value = $value.'%';	
+				}
+				
+				if(strtoupper($rule->operator) == 'ENDS' && $value && !empty($value))
+				{
+					$rule->operator = 'LIKE';
+					
+					$value = '%'.$value;	
 				}
 				
 				if($value && !empty($value))
