@@ -172,7 +172,8 @@ class Channel_search_upd {
 	);
 	
 	private $hooks = array(
-		array('channel_entries_query_result', 'channel_entries_query_result')
+		array('channel_entries_query_result', 'channel_entries_query_result'),
+		array('channel_entries_tagdata_end', 'channel_entries_tagdata_end', '', 100)
 	);
 	
     public function __construct()
