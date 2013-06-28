@@ -349,6 +349,13 @@ class Channel_search {
 			$limit = $results->grand_total;
 		}
 		
+		if (preg_match('/'.LD.'if '.$this->param('prefix', '').'no_results'.RD.'(.*?)'.LD.'\/if'.RD.'/s', $this->EE->TMPL->tagdata, $match))
+		{
+			$this->EE->TMPL->tagdata = str_replace($match[0], '', $this->EE->TMPL->tagdata);
+			
+			$this->EE->TMPL->no_results = $match[1];
+		}
+		
 		if($results === FALSE || ($results->has_searched && ($results->response === FALSE || $results->response->num_rows() == 0)))
 		{
 			$vars = array();
@@ -483,7 +490,7 @@ class Channel_search {
 		
 		if($format = $this->param('format'))
 		{
-			$return = date($format, strtotime($return));	
+			$return = date($format, preg_match('/^\d*$/', $return) ? $return : strtotime($return));	
 		}
 		
 		return $return; 
