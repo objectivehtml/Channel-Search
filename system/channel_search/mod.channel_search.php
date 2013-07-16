@@ -280,7 +280,27 @@ class Channel_search {
 		{
 			$attribute_string .= $index.'="'.$value.'" ';	
 		}
-		
+
+		$has_searched = $this->EE->channel_search_lib->has_searched($rules);
+
+		$vars[0]['has_searched'] 	  = $has_searched;
+		$vars[0]['has_not_searched'] = $has_searched ? false : true;
+
+		$validation = array(
+			'success' 		 => TRUE,
+			'errors'         => array(),
+			'validation_ran' => FALSE
+		);
+
+		if($has_searched)
+		{
+			$validation = $this->EE->channel_search_lib->validate();
+
+			$validation['validation_ran'] = TRUE;
+		}
+
+		$vars[0] = array_merge($vars[0], $validation);
+
 		$form = '<form '.trim($attribute_string).'>'.$this->parse($vars).'</form>';
 		$form = preg_replace('/{form:.+}/', '', $form);
 				
@@ -508,24 +528,6 @@ class Channel_search {
 	
 	private function param($param, $default = FALSE, $boolean = FALSE, $required = FALSE)
 	{
-		$name 	= $param;
-		$param 	= $this->EE->input->get_post($param) ? $this->EE->input->get_post($param) : $this->EE->TMPL->fetch_param($param);
-		
-		if($required && !$param) show_error('You must define a "'.$name.'" parameter in the '.__CLASS__.' tag.');
-			
-		if($param === FALSE && $default !== FALSE)
-		{
-			$param = $default;
-		}
-		else
-		{				
-			if($boolean)
-			{
-				$param = strtolower($param);
-				$param = ($param == 'true' || $param == 'yes') ? TRUE : FALSE;
-			}			
-		}
-		
-		return $param;			
+		return $this->EE->channel_search_lib->param($param, $default, $boolean, $required);		
 	}
 }
