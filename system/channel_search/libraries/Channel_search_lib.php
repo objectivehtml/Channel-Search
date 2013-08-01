@@ -663,7 +663,7 @@ class Channel_search_lib {
 	public function param($param, $default = FALSE, $boolean = FALSE, $required = FALSE)
 	{
 		$name 	= $param;
-		$param 	= isset($this->EE->TMPL) ? $this->EE->TMPL->fetch_param($param) : $this->EE->input->get_post($param);
+		$param 	= isset($this->EE->TMPL) && $this->EE->TMPL->fetch_param($param) !== FALSE ? $this->EE->TMPL->fetch_param($param) : $this->EE->input->get_post($param);
 		
 		if($required && !$param) show_error('You must define a "'.$name.'" parameter.');
 			
@@ -681,8 +681,7 @@ class Channel_search_lib {
 		}
 		
 		return $param;			
-	}
-	
+	}	
 	
 	public function build_rules($rules)
 	{
