@@ -261,7 +261,7 @@ class Channel_search_lib {
 		$channels    = $this->EE->channel_data->utility->reindex('channel_name', $channels);		
 		$field_array = $this->EE->channel_data->utility->reindex('field_name', $field_array);
 		
-		$required_where[] = implode(' AND ', $channel_where);
+		$required_where[] = implode(' OR ', $channel_where);
 		
 		$rules = array();
 		
@@ -395,7 +395,9 @@ class Channel_search_lib {
 		if($export)
 		{
 			$this->EE->load->library('channel_search_export');
+			$this->EE->load->model('channel_search_history');
 			
+			$this->EE->channel_search_history->insert_history($id, array_merge($_GET, $_POST), trim($sql));
 			$this->EE->channel_search_export->trigger($export, $sql, $rules);	
 		}
 		
@@ -663,7 +665,7 @@ class Channel_search_lib {
 	public function param($param, $default = FALSE, $boolean = FALSE, $required = FALSE)
 	{
 		$name 	= $param;
-		$param 	= isset($this->EE->TMPL) && $this->EE->TMPL->fetch_param($param) !== FALSE ? $this->EE->TMPL->fetch_param($param) : $this->EE->input->get_post($param);
+		$param 	= isset($this->EE->TMPL) && $this->EE->TMPL->fetch_param($param) ? $this->EE->TMPL->fetch_param($param) : $this->EE->input->get_post($param);
 		
 		if($required && !$param) show_error('You must define a "'.$name.'" parameter.');
 			
