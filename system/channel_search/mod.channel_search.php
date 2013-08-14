@@ -44,6 +44,18 @@ class Channel_search {
 		}
 	}
 	
+	public function date()
+	{
+		$return = strtotime($this->param('string'), $this->param('time', $this->EE->localize->now));
+		
+		if($format = $this->param('format'))
+		{
+			return date(str_replace('%', '', $format), $return);
+		}
+
+		return $return;
+	}
+	
 	public function entry_has_category()
 	{
 		$entry_id = $this->param('entry_id', FALSE, FALSE, TRUE);
@@ -220,11 +232,11 @@ class Channel_search {
 		
 		$category_groups = array();
 		
-		foreach(explode(',', $rules->channel_names) as $name)
+		foreach($this->EE->channel_search_lib->trim_array(explode(',', $rules->channel_names)) as $name)
 		{
 			$category_groups = array_merge($category_groups, explode('|', $channels[$name]->cat_group));
 		}
-		
+
 		$categories = $this->EE->channel_data->get_categories(array(
 			'where' => array(
 				'group_id' => $category_groups,
@@ -474,7 +486,7 @@ class Channel_search {
 	
 	public function set()
 	{
-		if($value = $this->EE->TMPL->tagdata)
+		if($value = $this->param('value', $this->EE->TMPL->tagdata))
 		{
 			$name = $this->param('name', (isset($this->EE->TMPL->tagparts[2]) ? $this->EE->TMPL->tagparts[2] : FALSE));
 			
