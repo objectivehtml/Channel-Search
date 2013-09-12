@@ -73,10 +73,10 @@ class Channel_search_ext {
 				{
 					$result[$index]['is_last_row'] = FALSE;
 				}
-					
+				
 				foreach($cache->rules as $rule)
 				{
-					$result[$index] = array_merge($result[$index], $rule->get_vars_row($row));
+					$result[$index] = array_merge($result[$index], $rule->get_vars_row(array_merge((array) $response[$index], $row)));
 				}
 			}
 				
@@ -86,7 +86,7 @@ class Channel_search_ext {
 			{
 				$vars = array_merge($vars, $rule->get_vars());
 			}
-			
+
 			$obj->EE->TMPL->tagdata = $obj->EE->TMPL->parse_variables_row($obj->EE->TMPL->tagdata, (array) $vars);
 		}
 		

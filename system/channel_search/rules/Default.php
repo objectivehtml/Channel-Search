@@ -130,15 +130,18 @@ class Default_channel_search_rule extends Base_rule {
 						{
 							if(in_array($field_names[0], $this->reserved_fields))
 							{
-								if(!preg_match('/^\d*$/', $value))
+								if(in_array($field_names[0], $this->date_fields))
 								{
-									$value = strtotime($value);
+									if(!preg_match('/^\d*$/', $value))
+									{
+										$value = strtotime($value);
+									}
+									else
+									{
+										$value = (int) $value;
+									}
 								}
-								else
-								{
-									$value = (int) $value;
-								}
-								
+
 								$value_where[] = ' '.$field_names[0].' '.$rule->operator.' '.$EE->db->escape($value);
 							}
 							else

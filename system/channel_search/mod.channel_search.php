@@ -12,6 +12,7 @@ class Channel_search {
 		$this->EE->load->helper('addon');
 	}
 	
+
 	public function _setter()
 	{
 		if($this->EE->TMPL->tagparams)
@@ -28,6 +29,11 @@ class Channel_search {
 						
 						if($type == 'set')
 						{
+							$current = $this->EE->input->get_post($param);
+							$current_time = strtotime($value, strtotime($current ? $current : $value));
+							$format  = $this->param('format:'.$param);
+							$value   = $format ? date($format,  (preg_match('/^\d*$/', $current) ? $current : $current_time)) : $value;
+
 							$_GET[$param]  = $value;
 							$_POST[$param] = $value;
 						}
@@ -43,12 +49,22 @@ class Channel_search {
 			}
 		}
 	}
+
+	public function char_count()
+	{
+		return strlen($this->param('string', $this->EE->TMPL->tagdata));
+	}
+
+	public function random_hash()
+	{
+		return md5(time());
+	}
 	
 	public function date()
 	{
-		$return = strtotime($this->param('string'), $this->param('time', $this->EE->localize->now));
+		$return = strtotime($this->param('string', $this->param('time', $this->EE->localize->now)));
 		
-		if($format = $this->param('format'))
+		if($format = $this->param('format', $this->param('date_format')))
 		{
 			return date(str_replace('%', '', $format), $return);
 		}
@@ -164,7 +180,7 @@ class Channel_search {
 	public function export_url()
 	{
 		return $this->url(array(
-			'export' => 'true'
+			'export' => $this->param('type', 'true')
 		));
 	}
 	
@@ -186,7 +202,7 @@ class Channel_search {
 			$params[$index] = $value;
 		}
 		
-		$return = page_url(TRUE, FALSE) . '?' . http_build_query($params);
+		$return = $this->param('page_url', page_url(TRUE, FALSE)) . '?' . http_build_query($params);
 		
 		$_GET  = $get;
 		$_POST = $post;
@@ -515,14 +531,15 @@ class Channel_search {
 	
 	public function get()
 	{
-		$default = $this->param('default', NULL);
-		$name    = $this->param('name', isset($this->EE->TMPL->tagparts[2]) ? $this->EE->TMPL->tagparts[2] : false);
-		$return  = $this->EE->input->get_post($name);
-		$return  = $return !== FALSE ? $return : $default;
+		$strtotime = $this->param('strtotime');
+		$default   = $this->param('default', NULL);
+		$name      = $this->param('name', isset($this->EE->TMPL->tagparts[2]) ? $this->EE->TMPL->tagparts[2] : false);
+		$return    = $this->EE->input->get_post($name);
+		$return    = $return !== FALSE ? $return : $default;
 		
 		if($format = $this->param('format'))
 		{
-			$return = date($format, preg_match('/^\d*$/', $return) ? $return : strtotime($return));	
+			$return = date($format, preg_match('/^\d*$/', $return) ? $return : ($strtotime ? strtotime($strtotime, strtotime($return)) : strtotime($return)));	
 		}
 		
 		return $return; 

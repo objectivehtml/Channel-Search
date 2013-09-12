@@ -198,7 +198,7 @@ class Channel_search_lib {
 		$from     = array();
 		$group_by = array();
 		$having   = array();
-		$join     = array('INNER JOIN `exp_channel_titles` USING (entry_id)');
+		$join     = array('INNER JOIN `exp_channel_titles` ON `exp_channel_titles`.`entry_id` = `exp_channel_data`.`entry_id`');
 		$select   = array(
 			'SQL_CALC_FOUND_ROWS `exp_channel_titles`.*',
 			'exp_channel_titles.entry_id',
