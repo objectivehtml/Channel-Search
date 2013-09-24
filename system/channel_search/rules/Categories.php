@@ -168,7 +168,7 @@ class Categories_channel_search_rule extends Base_rule {
 			    FROM exp_channel_titles
 			    LEFT JOIN exp_category_posts USING (entry_id) 
 			    LEFT JOIN exp_categories USING (cat_id)
-			    WHERE ('.$required_where.') '.(count($cat_where) > 0 ? '(('. implode(' '.$clause.' ', $cat_where) .')' : NULL).'
+			    WHERE ('.$required_where.') '.(count($cat_where) > 0 ? ' AND ('. implode(' '.$clause.' ', $cat_where) .')' : NULL).'
 			    GROUP BY entry_id
 			    '.(count($cat_having) > 0 ? 'HAVING cat_count '.$count_op.' '.count($cat_having) : NULL).'
 			) cc

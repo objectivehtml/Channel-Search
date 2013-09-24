@@ -16,6 +16,8 @@ require_once PATH_THIRD . 'channel_search/libraries/InterfaceBuilder/InterfaceBu
 
 class Channel_search_mcp {
 	
+	public $search_feilds = array();
+
 	public function __construct()
 	{
 		$this->EE =& get_instance();
@@ -30,6 +32,40 @@ class Channel_search_mcp {
 		{
 			$this->EE->load->library('theme_loader');			
 		}
+
+		$this->search_fields = array(					
+			'search_id' => array(
+				'label' => lang('channel_search_search_id'),
+				'description' => lang('channel_search_search_id_desc'),
+				'type'	=> 'input'
+			),
+			'channel_names' => array(
+				'label' => lang('channel_search_channel_names'),
+				'description' => lang('channel_search_channel_names_desc'),
+				'type'	=> 'input'
+			),
+			'get_trigger' => array(
+				'label' => lang('channel_search_get_trigger'),
+				'description' => lang('channel_search_get_trigger_desc'),
+				'type'	=> 'input'
+			),
+			'empty_trigger' => array(
+				'label' => lang('channel_search_empty_trigger'),
+				'description' => lang('channel_search_empty_trigger_desc'),
+				'type'	=> 'radio',
+				'settings' => array(
+					'options' => array(
+						'false' => 'No',
+						'true'  => 'Yes'
+					)
+				)
+			),
+			'prevent_search_trigger' => array(
+				'label' => lang('channel_search_prevent_search_trigger'),
+				'description' => lang('channel_search_prevent_search_trigger_desc'),
+				'type'	=> 'input'
+			)	
+		);
 		
 		$this->EE->theme_loader->module_name = 'channel_search';
 		$this->EE->theme_loader->javascript('InterfaceBuilder');
@@ -186,6 +222,7 @@ class Channel_search_mcp {
 			'search_id'     => $this->EE->input->post('search_id', TRUE),
 			'channel_names' => $this->EE->input->post('channel_names', TRUE),
 			'get_trigger'   => $this->EE->input->post('get_trigger', TRUE),
+			'empty_trigger' => $this->EE->input->post('empty_trigger', TRUE),
 			'prevent_search_trigger' => $this->EE->input->post('prevent_search_trigger', TRUE) 
 		);
 		
@@ -202,6 +239,7 @@ class Channel_search_mcp {
 			'search_id'     => $this->EE->input->post('search_id', TRUE),
 			'channel_names' => $this->EE->input->post('channel_names', TRUE),
 			'get_trigger'   => $this->EE->input->post('get_trigger', TRUE),
+			'empty_trigger' => $this->EE->input->post('empty_trigger', TRUE),
 			'prevent_search_trigger' => $this->EE->input->post('prevent_search_trigger', TRUE)  
 		);
 		
@@ -244,35 +282,12 @@ class Channel_search_mcp {
 	}
 	
 	public function new_search()
-	{			
-		$fields = array(					
-			'search_id' => array(
-				'label' => lang('channel_search_search_id'),
-				'description' => lang('channel_search_search_id_desc'),
-				'type'	=> 'input'
-			),
-			'channel_names' => array(
-				'label' => lang('channel_search_channel_names'),
-				'description' => lang('channel_search_channel_names_desc'),
-				'type'	=> 'input'
-			),
-			'get_trigger' => array(
-				'label' => lang('channel_search_get_trigger'),
-				'description' => lang('channel_search_get_trigger_desc'),
-				'type'	=> 'input'
-			),	
-			'prevent_search_trigger' => array(
-				'label' => lang('channel_search_prevent_search_trigger'),
-				'description' => lang('channel_search_prevent_search_trigger_desc'),
-				'type'	=> 'input'
-			)
-		);
-		
+	{	
 		$vars = array(
 			'type'          => 'New',
 			'button_text'   => 'Create Rule',
 			'xid'           => $this->EE->channel_search_lib->generate_xid(),
-			'settings'      => InterfaceBuilder::table($fields, array(), array(), channel_search_attr()),
+			'settings'      => InterfaceBuilder::table($this->search_fields, array(), array(), channel_search_attr()),
 			'action'        => cp_url('Channel_search', 'new_search_action')
 		);
 
@@ -283,36 +298,13 @@ class Channel_search_mcp {
 	{		
 		$id     = $this->EE->input->get_post('id');	
 		$search = $this->EE->channel_search_model->get_rule($id)->row_array();
-		
-		$fields = array(					
-			'search_id' => array(
-				'label' => lang('channel_search_search_id'),
-				'description' => lang('channel_search_search_id_desc'),
-				'type'	=> 'input'
-			),
-			'channel_names' => array(
-				'label' => lang('channel_search_channel_names'),
-				'description' => lang('channel_search_channel_names_desc'),
-				'type'	=> 'input'
-			),
-			'get_trigger' => array(
-				'label' => lang('channel_search_get_trigger'),
-				'description' => lang('channel_search_get_trigger_desc'),
-				'type'	=> 'input'
-			),
-			'prevent_search_trigger' => array(
-				'label' => lang('channel_search_prevent_search_trigger'),
-				'description' => lang('channel_search_prevent_search_trigger_desc'),
-				'type'	=> 'input'
-			)	
-		);
-		
+				
 		$vars = array(
 			'type'          => 'Edit',
 			'id'			=> $id,
 			'xid'           => $this->EE->channel_search_lib->generate_xid(),
 			'button_text'   => 'Save Changes',
-			'settings'      => InterfaceBuilder::table($fields, $search, array(), channel_search_attr()),
+			'settings'      => InterfaceBuilder::table($this->search_fields, $search, array(), channel_search_attr()),
 			'action'        => cp_url('Channel_search', 'edit_search_action')
 		);
 

@@ -81,9 +81,19 @@ class Channel_search_lib {
 				$trigger = trim($trigger);
 				$value   = $this->EE->input->get_post($trigger);
 				
-				if(!$value || empty($value))
+				if($search->empty_trigger != 'true')
 				{
-					$has_searched = FALSE;
+					if(!$value || empty($value))
+					{
+						$has_searched = FALSE;
+					}
+				}
+				else
+				{
+					if($value === FALSE)
+					{
+						$has_searched = FALSE;
+					}
 				}
 			}
 		}
