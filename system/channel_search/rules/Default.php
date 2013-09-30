@@ -168,7 +168,12 @@ class Default_channel_search_rule extends Base_rule {
 						}
 					}
 
-					$where[] = $rule->clause.implode(' AND ', $value_where);
+					$append = implode(' AND ', $value_where);
+
+					if(!empty($append))
+					{
+						$where[] = $rule->clause.$append;
+					}
 				}
 			}
 
