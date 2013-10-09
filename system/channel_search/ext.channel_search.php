@@ -32,21 +32,37 @@ class Channel_search_ext {
 	}
 	
 	public function channel_entries_tagdata_end($tagdata, $row, $obj)
-	{
+	{		
+		// has this hook already been called?
+		if ($this->EE->extensions->last_call)
+		{
+			$tagdata = $this->EE->extensions->last_call;
+		}
+
+		if($this->EE->TMPL->fetch_param('channel_search_result_tag') != 'yes')
+		{
+			return $tagdata;
+		}
+
 		if(isset($this->EE->session->cache['channel_search']['search_results']))
 		{
 			$cache = $this->EE->session->cache['channel_search']['search_results'];
 			
 			$vars = array();
-			
-			foreach($cache->rules as $rule)
+
+			if(isset($cache->rules))
 			{
-				$vars = array_merge($vars, $rule->get_vars_row($row));
-			}
-			
-			$tagdata = $this->EE->TMPL->parse_variables_row($tagdata, $vars);			
+				foreach($cache->rules as $rule)
+				{
+					$vars = array_merge($vars, $rule->get_vars_row($row));
+				}
+				
+				$tagdata = $this->EE->TMPL->parse_variables_row($tagdata, $vars);	
+			}		
 		}
 		
+		$this->EE->session->set_cache('channel_search', 'search_results', array());
+			
 		return $tagdata;
 	}
 	
@@ -54,6 +70,20 @@ class Channel_search_ext {
 	{
 		$obj =& $obj;
 		
+		// -------------------------------------------
+		//  Get the latest version of $query_result
+		// -------------------------------------------
+
+		if ($obj->EE->extensions->last_call !== FALSE)
+		{
+			$result = $obj->EE->extensions->last_call;
+		}
+
+		if($this->EE->TMPL->fetch_param('channel_search_result_tag') != 'yes')
+		{
+			return $result;
+		}
+
 		if(isset($this->EE->session->cache['channel_search']['search_results']))
 		{
 			$cache 	  = $this->EE->session->cache['channel_search']['search_results'];
@@ -61,7 +91,7 @@ class Channel_search_ext {
 			
 			$result[0]['is_first_row'] = TRUE;
 			$result[count($result) - 1]['is_last_row'] = TRUE;
-			
+
 			foreach($result as $index => $row)
 			{
 				if($index > 0)
@@ -76,6 +106,11 @@ class Channel_search_ext {
 				
 				foreach($cache->rules as $rule)
 				{
+					if(!isset($response[$index]))
+					{
+						//$response[$index] = array();
+					}
+
 					$result[$index] = array_merge($result[$index], $rule->get_vars_row(array_merge((array) $response[$index], $row)));
 				}
 			}
@@ -89,7 +124,7 @@ class Channel_search_ext {
 
 			$obj->EE->TMPL->tagdata = $obj->EE->TMPL->parse_variables_row($obj->EE->TMPL->tagdata, (array) $vars);
 		}
-		
+
 		return $result;
 	}	 
 	
