@@ -182,41 +182,62 @@ class Channel_search {
 			'export' => $this->param('type', 'true')
 		));
 	}
+
+	public function segment_exists()
+	{
+		$segments = $this->EE->uri->segment_array();
+
+		if(in_array(strtolower($this->param('name', $this->param('segment'))), $segments))
+		{
+			return TRUE;
+		}
+
+		return FALSE;
+	}
 	
 	public function categories()
 	{
 		$group_id 	   = $this->param('group_id');
 		$parent_id 	   = $this->param('parent_id');
+
 		$cat_url_title = $this->param('cat_url_title');
 		$cat_id 	   = $this->param('cat_id');
 		$cat_name 	   = $this->param('cat_name');
 
-		if($cat_id)
+		$where = array();
+
+		if($cat_id !== FALSE)
 		{
 			$where['cat_id'] = $cat_id;
 		}
 
-		if($group_id)
+		if($group_id !== FALSE)
 		{
 			$where['group_id'] = $group_id;
 		}
 
-		if($parent_id)
+		if($parent_id !== FALSE)
 		{
 			$where['parent_id'] = $parent_id;
 		}
 
-		if($cat_url_title)
+		if($cat_url_title !== FALSE)
 		{
 			$where['cat_url_title'] = $cat_url_title;
 		}
 
-		if($cat_name)
+		if($cat_name !== FALSE)
 		{
 			$where['cat_name'] = $cat_name;
 		}
 
+		if(!count($where))
+		{
+			return '';
+		}
+
 		$categories = $this->_get_categories($where);
+		$categories = $this->_show_trail($categories);
 		$categories = $this->_show_param($categories, 'show_parent', 'cat_id', 'parent_id');
 		$categories = $this->_show_param($categories, 'show_children', 'parent_id', 'cat_id');
 		$categories = $this->_show_parents($categories);
@@ -230,6 +251,36 @@ class Channel_search {
 		$categories = $this->EE->channel_data->utility->add_prefix($this->param('prefix', ''), $categories);
 
 		return $this->parse($categories);
+	}
+
+	private function _show_trail($categories)
+	{
+		if($this->param('show_trail', FALSE, TRUE))
+		{
+			if(isset($categories[0]))
+			{
+				return $this->_build_trail($categories[0], $this->_get_categories());
+			}
+		}
+
+		return $categories;
+	}
+
+	private function _build_trail($category, $categories = array(), $return = array())
+	{
+		array_unshift($return, $category);
+
+		if($category['parent_id'] != "0")
+		{
+			$parent = $this->_get_categories(array(
+				'cat_id' => $category['parent_id']
+			));
+
+			$return = $this->_build_trail($parent[0], $categories, $return);
+		}
+
+
+		return $return;
 	}
 
 	private function _show_siblings($categories)
@@ -282,9 +333,21 @@ class Channel_search {
 
 			foreach($categories as $category)
 			{
-				$return = array_merge($this->_get_categories(array(
+				$show_cats = $this->_get_categories(array(
+					'group_id' => $category['group_id'],
 					$where_key => $category[$var_key]
-				), TRUE), $return);
+				), TRUE);
+
+				if($param == 'show_children' && !count($show_cats))
+				{
+					$show_cats = $this->_get_categories(array(
+						'group_id' => $category['group_id'],
+						$where_key => $category[$where_key]
+					));
+				}
+
+				$return = array_merge($show_cats, $return);
+
 			}
 
 			return $return;
@@ -407,7 +470,13 @@ class Channel_search {
 			$count++;
 		}
 
-		return implode('/', $return);
+		$prepend = $this->param('prepend', '');
+		$prepend = !empty($prepend) && !empty($return) ? $prepend . '/': '';
+
+		$append = $this->param('append', '');
+		$append = !empty($append) && !empty($return) ? $append . '/': '';
+
+		return strtolower($prepend.implode('/', $return).$append);
 	}
 
 	public function url($params = array())
