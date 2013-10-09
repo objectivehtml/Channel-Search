@@ -12,7 +12,6 @@ class Channel_search {
 		$this->EE->load->helper('addon');
 	}
 	
-
 	public function _setter()
 	{
 		if($this->EE->TMPL->tagparams)
@@ -184,6 +183,233 @@ class Channel_search {
 		));
 	}
 	
+	public function categories()
+	{
+		$group_id 	   = $this->param('group_id');
+		$parent_id 	   = $this->param('parent_id');
+		$cat_url_title = $this->param('cat_url_title');
+		$cat_id 	   = $this->param('cat_id');
+		$cat_name 	   = $this->param('cat_name');
+
+		if($cat_id)
+		{
+			$where['cat_id'] = $cat_id;
+		}
+
+		if($group_id)
+		{
+			$where['group_id'] = $group_id;
+		}
+
+		if($parent_id)
+		{
+			$where['parent_id'] = $parent_id;
+		}
+
+		if($cat_url_title)
+		{
+			$where['cat_url_title'] = $cat_url_title;
+		}
+
+		if($cat_name)
+		{
+			$where['cat_name'] = $cat_name;
+		}
+
+		$categories = $this->_get_categories($where);
+		$categories = $this->_show_param($categories, 'show_parent', 'cat_id', 'parent_id');
+		$categories = $this->_show_param($categories, 'show_children', 'parent_id', 'cat_id');
+		$categories = $this->_show_parents($categories);
+		$categories = $this->_show_siblings($categories);
+
+		if(!count($categories))
+		{
+			return $this->EE->TMPL->no_results();
+		}
+
+		$categories = $this->EE->channel_data->utility->add_prefix($this->param('prefix', ''), $categories);
+
+		return $this->parse($categories);
+	}
+
+	private function _show_siblings($categories)
+	{
+		if($this->param('show_siblings', FALSE, TRUE))
+		{
+			$siblings = array();
+
+			foreach($categories as $category)
+			{
+				$siblings = array_merge($siblings, $this->_get_categories(array(
+					'parent_id' => $category['parent_id']
+				)));
+			}
+
+			return $siblings;
+		}
+
+		return $categories;
+	}
+
+	private function _show_parents($categories)
+	{
+		if($this->param('show_parents', FALSE, TRUE))
+		{
+			$parents = array();
+
+			foreach($categories as $category)
+			{
+				$parent = $this->_get_categories(array(
+					'cat_id' => $category['parent_id']
+				));
+
+				$parents = array_merge($parents, $this->_get_categories(array(
+					'parent_id' => isset($parent[0]['parent_id']) ? $parent[0]['parent_id'] : 0
+				)));
+			}
+
+			return $parents;
+		}
+
+		return $categories;
+	}
+
+	private function _show_param($categories, $param, $where_key, $var_key)
+	{
+		if($this->param($param, FALSE, TRUE))
+		{
+			$return = array();
+
+			foreach($categories as $category)
+			{
+				$return = array_merge($this->_get_categories(array(
+					$where_key => $category[$var_key]
+				), TRUE), $return);
+			}
+
+			return $return;
+		}
+
+		return $categories;
+	}
+
+	private function _get_categories($where = array(), $debug = FALSE)
+	{	
+		$where = array_merge(array(
+			'site_id' => $this->param('site_id', config_item('site_id'))
+		), $where);
+
+		return $this->EE->channel_data->get_categories(array(
+			'where' 	=> $where,
+			'limit' 	=> $this->param('limit'),
+			'offset' 	=> $this->param('offset'),
+			'order_by'  => $this->param('order_by', 'parent_id'),
+			'sort' 		=> $this->param('sort', 'desc')
+		))->result_array();
+	}
+
+
+/*
+	private function _append_to_tree($tree, $category, $parent)//, $parent, $children)
+	{
+		$existing_cat    = $this->_get_category_from_tree($tree, $category);
+		$existing_parent = $this->_get_category_from_tree($tree, $category);
+
+		if(!$existing_cat)
+		{
+			$tree[$category->cat_id][] = $category;
+		}
+	}
+
+	private function _get_category_from_tree($tree, $category)
+	{
+		$return = FALSE;
+
+		foreach($tree as $parent_id => $branch)
+		{
+			if($category->cat_id == $parent_id)
+			{
+				exit('match');
+			}
+			else
+			{
+				var_dump($category->cat_id, $parent_id, $branch);exit();
+			}
+		}
+
+		return $return;
+	}
+
+	private function _get_parent_category($cat_id, $categories)
+	{
+		foreach($categories as $parent_id => $category_group)
+		{
+			foreach($category_group as $category)
+			{
+				if($category->cat_id == $cat_id)
+				{
+					return $category;
+				}
+			}
+		}
+	}
+
+	private function _get_child_categories($cat_id, $categories)
+	{
+		$return = array();
+
+		foreach($categories as $parent_id => $category)
+		{
+			if($cat_id == $parent_id)
+			{
+				$return[] = $category;
+			}
+		}
+
+		return $return;
+	}
+*/
+	public function segments()
+	{
+		$start = $this->param('start', FALSE, FALSE, TRUE);
+		$stop  = $this->param('stop', FALSE);
+		$limit = $this->param('limit', FALSE);
+
+		$segments = $this->EE->uri->segment_array();
+
+		$return = array();
+
+		$valid = FALSE;
+		$count = 0;
+
+		foreach($segments as $index => $segment)
+		{
+			if($valid && $stop !== FALSE && $segment == $stop)
+			{
+				$valid = FALSE;
+			}
+			
+			if($valid)
+			{
+				$return[] = $segment;
+			}
+
+			if($valid && $limit !== FALSE && $count > $limit)
+			{
+				$valid = FALSE;
+			}
+
+			if($start == $segment)
+			{
+				$valid = TRUE;
+			}
+
+			$count++;
+		}
+
+		return implode('/', $return);
+	}
+
 	public function url($params = array())
 	{
 		$get  = $_GET;
@@ -396,6 +622,9 @@ class Channel_search {
 		{
 			$limit = $results->grand_total;
 		}
+		
+
+		$this->EE->TMPL->tagparams['channel_search_result_tag'] = TRUE;
 		
 		if (preg_match('/'.LD.'if '.$this->param('prefix', '').'no_results'.RD.'(.*?)'.LD.'\/if'.RD.'/s', $this->EE->TMPL->tagdata, $match))
 		{
