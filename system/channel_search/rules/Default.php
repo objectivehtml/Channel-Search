@@ -32,7 +32,7 @@ class Default_channel_search_rule extends Base_rule {
 					),
 					2 => array(
 						'name'  => 'operator',
-						'title' => 'Operator (>, >=, <, <=, =, !=, LIKE)'
+						'title' => 'Operator (>, >=, <, <=, =, !=, LIKE, STARTS, ENDS, KEYWORDS)'
 					),
 					3 => array(
 						'name'  => 'clause',
@@ -81,51 +81,102 @@ class Default_channel_search_rule extends Base_rule {
 					$rule->operator = '=';
 				}
 				
-				if($rule->operator == 'LIKE' && $value && !empty($value))
+				if(strtoupper($rule->operator) == 'LIKE' && $value && !empty($value))
 				{
 					$value = '%'.$value.'%';	
 				}
 				
+				if(strtoupper($rule->operator) == 'STARTS' && $value && !empty($value))
+				{
+					$rule->operator = 'LIKE';
+					
+					$value = $value.'%';	
+				}
+				
+				if(strtoupper($rule->operator) == 'ENDS' && $value && !empty($value))
+				{
+					$rule->operator = 'LIKE';
+					
+					$value = '%'.$value;	
+				}
+
 				if($value && !empty($value))
 				{
-					$field_names = $this->trim_array(explode(',', $rule->channel_field_name));
-					
-					if(count($field_names) == 1 && isset($this->fields[$rule->channel_field_name]) || in_array($field_names[0], $this->reserved_fields))
+					if(strtoupper($rule->operator) == 'KEYWORDS' && $value && !empty($value))
 					{
-						if(in_array($field_names[0], $this->reserved_fields))
+						$rule->operator = 'LIKE';
+
+						$illegal_chars = array(',', '+', '-', ':', ';', '.', '$', '#');
+
+						$values = explode(' ', str_replace($illegal_chars, '', $value));
+
+						foreach($values as $index => $value)
 						{
-							if(in_array($field_names[0], $this->date_fields))
-							{
-								$value = strtotime($value);
-							}
-							
-							$where[] = $rule->clause.' '.$field_names[0].' '.$rule->operator.' '.$EE->db->escape($value);
-						}
-						else
-						{	
-							$where[] = $rule->clause.' field_id_'.$this->fields[$rule->channel_field_name]->field_id.' '.$rule->operator.' '.$EE->db->escape($value);
+							$values[$index] = '%'.$value.'%';
 						}
 					}
 					else
-					{	
-						$concat = array('\' \'');
+					{
+						$values = array($value);
+					}
+
+					$value_where = array();
+
+					foreach($values as $value)
+					{					
+						$field_names = $this->trim_array(explode(',', $rule->channel_field_name));
 						
-						foreach($field_names as $field_name)
+						if(count($field_names) == 1 && isset($this->fields[$rule->channel_field_name]) || in_array($field_names[0], $this->reserved_fields))
 						{
-							if(isset($this->fields[$field_name]))
+							if(in_array($field_names[0], $this->reserved_fields))
 							{
-								$concat[] = 'field_id_'.$this->fields[$field_name]->field_id;	
+								if(in_array($field_names[0], $this->date_fields))
+								{
+									if(!preg_match('/^\d*$/', $value))
+									{
+										$value = strtotime($value);
+									}
+									else
+									{
+										$value = (int) $value;
+									}
+								}
+
+								$value_where[] = ' '.$field_names[0].' '.$rule->operator.' '.$EE->db->escape($value);
+							}
+							else
+							{	
+								$value_where[] = ' field_id_'.$this->fields[$rule->channel_field_name]->field_id.' '.$rule->operator.' '.$EE->db->escape($value);
 							}
 						}
-						
-						if(count($concat) > 1)
-						{
-							$where[] = $rule->clause.' concat_ws('.implode($concat, ',').') '.$rule->operator.' '.$EE->db->escape($value);
+						else
+						{	
+							$concat = array('\' \'');
+							
+							foreach($field_names as $field_name)
+							{
+								if(isset($this->fields[$field_name]))
+								{
+									$concat[] = 'field_id_'.$this->fields[$field_name]->field_id;	
+								}
+							}
+							
+							if(count($concat) > 1)
+							{
+								$value_where[] = ' concat_ws('.implode($concat, ', ').') '.$rule->operator.' '.$EE->db->escape($value);
+							}
 						}
+					}
+
+					$append = implode(' AND ', $value_where);
+
+					if(!empty($append))
+					{
+						$where[] = $rule->clause.$append;
 					}
 				}
 			}
-			
+
 			$this->where = $this->clean_sql(implode(' ', $where));
 		}
 		

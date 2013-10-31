@@ -29,8 +29,8 @@ abstract class Base_export {
 		header("Content-Type: application/octet-stream");
 		header("Content-Disposition: attachment; filename=\"search-results-".date('Y-m-d-H-i', time()).".csv\";" );
 		header("Content-Transfer-Encoding: binary"); 
-		
-		echo $EE->dbutil->csv_from_result($this->query($data));
+		 
+		echo $EE->dbutil->csv_from_result($this->query($sql));
 		exit();
 	}
 	

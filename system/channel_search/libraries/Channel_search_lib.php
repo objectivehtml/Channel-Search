@@ -53,9 +53,127 @@ class Channel_search_lib {
 		
 		return $array;
 	}
+
+	public function has_searched($id)
+	{
+		$search = $id;
+
+		if(!is_object($id))
+		{
+			$search = $this->EE->channel_search_model->get_rule_by_id($id);
+
+			if($search->num_rows() == 0)
+			{
+				return FALSE;
+			}
+			
+			$search = $search->row();
+		}	
+
+		$has_searched = FALSE;
+
+		if(!empty($search->get_trigger))
+		{
+			$has_searched = TRUE;
+
+			foreach($this->trim_array(explode(',', $search->get_trigger)) as $trigger)
+			{
+				$trigger = trim($trigger);
+				$value   = trim($this->EE->input->get_post($trigger));
+				
+				if($search->empty_trigger != 'true')
+				{
+					if(!$value || empty($value))
+					{
+						$has_searched = FALSE;
+					}
+				}
+				else
+				{
+					if($value === FALSE)
+					{
+						$has_searched = FALSE;
+					}
+				}
+			}
+		}
+		else
+		{
+			$has_searched = TRUE;
+		}
+
+		return $has_searched;
+	}
+
+	public function validate()
+	{
+		$merge = array_merge($_POST, $_GET);
+		$post  = $_POST;
+		$_POST = $merge;
+
+		$return = array(
+			'success' 		=> TRUE,
+			'field_errors'  => array(),
+			'total_errors'  => 0
+		);
+
+		$this->EE->load->helper(array('form'));
+		$this->EE->load->library('form_validation');
+
+		$config = array();
+
+		foreach($this->EE->TMPL->tagparams as $param => $value)
+		{
+			if(preg_match('/^rules:/', $param))
+			{
+				$name  = preg_replace('/^rules:/', '', $param);
+				$label = $this->param('label:'.$name, $this->param('labels:'.$name, $name));
+
+				$config[] = array(
+					'field'  => $name,
+					'label' => $label,
+					'rules' => $value
+				);
+			}
+		}
+
+		$this->EE->form_validation->set_rules($config);
+		$this->EE->form_validation->set_error_delimiters('', '');
+
+		if(!$this->EE->form_validation->run())
+		{
+			$errors = array();
+
+			foreach($config as $item)
+			{
+				$error = form_error($item['field']);;
+				$return['error:'.$item['field']] = $error;
+				$errors[] = array(
+					'field_name'  => $item['field'],
+					'field_label' => $item['label'],
+					'error' => $error
+				);
+			}
+
+			$return['total_errors'] = count($errors);
+			$return['field_errors'] = $errors;
+			$return['success'] 		= $return['total_errors'] ? FALSE : TRUE;
+		}
+
+		$_POST = $post;
+
+		return $return;
+	}
 	
 	public function search($id, $order_by = 'exp_channel_titles.entry_id', $sort = 'DESC', $limit = 20, $offset = 0, $export = FALSE)
-	{
+	{	
+		$orig_get  = $_GET;		
+		$orig_post = $_POST;
+		
+		$orig_vars = array_merge($orig_get, $orig_post);
+				
+		$prevent_search = FALSE;
+		
 		$search = $this->EE->channel_search_model->get_rule_by_id($id);
 		
 		if($search->num_rows() == 0)
@@ -71,10 +189,26 @@ class Channel_search_lib {
 			return FALSE;
 		}
 		
+		if(!empty($search->prevent_search_trigger))
+		{
+			$prevent_triggers = explode(',', $search->prevent_search_trigger);
+			
+			foreach($prevent_triggers as $trigger)
+			{
+				if(isset($orig_vars[trim($trigger)]))
+				{
+					$prevent_search = TRUE;
+					
+					$_GET  = array();
+					$_POST = array();
+				}
+			}
+		}
+		
 		$from     = array();
 		$group_by = array();
 		$having   = array();
-		$join     = array('INNER JOIN `exp_channel_titles` USING (entry_id)');
+		$join     = array('INNER JOIN `exp_channel_titles` ON `exp_channel_titles`.`entry_id` = `exp_channel_data`.`entry_id`');
 		$select   = array(
 			'SQL_CALC_FOUND_ROWS `exp_channel_titles`.*',
 			'exp_channel_titles.entry_id',
@@ -137,7 +271,7 @@ class Channel_search_lib {
 		$channels    = $this->EE->channel_data->utility->reindex('channel_name', $channels);		
 		$field_array = $this->EE->channel_data->utility->reindex('field_name', $field_array);
 		
-		$required_where[] = implode(' AND ', $channel_where);
+		$required_where[] = implode(' OR ', $channel_where);
 		
 		$rules = array();
 		
@@ -271,31 +405,35 @@ class Channel_search_lib {
 		if($export)
 		{
 			$this->EE->load->library('channel_search_export');
+			$this->EE->load->model('channel_search_history');
 			
+			$this->EE->channel_search_history->insert_history($id, array_merge($_GET, $_POST), trim($sql));
 			$this->EE->channel_search_export->trigger($export, $sql, $rules);	
 		}
 		
 		$sql .= ($limit > 0 ? ' LIMIT '.$offset.','.$limit : NULL);
 		
-		$has_searched = FALSE;
+		$has_searched = $this->has_searched($search);
 		
-		if(!empty($search->get_trigger))
+		$validation = array(
+			'success' 		 => TRUE,
+			'errors'         => array(),
+			'validation_ran' => FALSE
+		);
+
+		if($has_searched)
 		{
-			foreach($this->trim_array(explode(',', $search->get_trigger)) as $trigger)
-			{
-				$trigger = trim($trigger);
-				
-				if($this->EE->input->get_post($trigger))
-				{
-					$has_searched = TRUE;
-				}
-			}
+			$validation = $this->validate();
+
+			$validation['validation_ran'] = TRUE;
 		}
-		else
+
+		if(!$validation['success'])
 		{
-			$has_searched = TRUE;
+			$has_searched 	  = FALSE;
+			$has_not_searched = TRUE;
 		}
-		
+
 		if($has_searched)
 		{
 			$this->EE->load->model('channel_search_history');
@@ -303,7 +441,9 @@ class Channel_search_lib {
 			$this->EE->channel_search_history->insert_history($id, array_merge($_GET, $_POST), trim($sql));
 		}
 		
-		$response = (object) array(
+		$this->EE->TMPL->tagparams['channel_search_result_tag'] = 'yes';
+
+		$response = (object) array_merge(array(
 			'response' => $has_searched ? $this->EE->db->query($sql) : FALSE,
 			'fields'   => $fields,
 			'statuses' => $statuses,
@@ -316,8 +456,14 @@ class Channel_search_lib {
 			'sort'     => $sort,
 			'limit'    => $limit,
 			'offset'   => $offset,
-			'grand_total' => $this->EE->db->query('SELECT FOUND_ROWS() as \'total\'')->row('total'),
-		);
+			'grand_total' => $has_searched ? $this->EE->db->query('SELECT FOUND_ROWS() as \'total\'')->row('total') : 0,
+		), $validation);
+		
+		if($prevent_search)
+		{
+			$_GET  = $orig_get;
+			$_POST = $orig_post;
+		}
 		
 		return $response;
 	}
@@ -528,10 +674,10 @@ class Channel_search_lib {
 		return $return;
 	}
 	
-	private function param($param, $default = FALSE, $boolean = FALSE, $required = FALSE)
+	public function param($param, $default = FALSE, $boolean = FALSE, $required = FALSE)
 	{
 		$name 	= $param;
-		$param 	= $this->EE->input->get_post($param);
+		$param 	= isset($this->EE->TMPL) && $this->EE->TMPL->fetch_param($param) !== FALSE ? $this->EE->TMPL->fetch_param($param) : $this->EE->input->get_post($param);
 		
 		if($required && !$param) show_error('You must define a "'.$name.'" parameter.');
 			
@@ -549,8 +695,7 @@ class Channel_search_lib {
 		}
 		
 		return $param;			
-	}
-	
+	}	
 	
 	public function build_rules($rules)
 	{

@@ -11,8 +11,14 @@ $lang = array(
 'channel_search_channel_names'      => 'Channel Names(s)',
 'channel_search_channel_names_desc' => 'Enter the channel name(s) you wish to search. If you are searching multiple channels, delimit the channel name with a comma.',
 
-'channel_search_get_trigger'        => 'Get Trigger',
-'channel_search_get_trigger_desc'   => 'This is the name of the GET variable that should trigger the results tag to perform the search.',
+'channel_search_get_trigger'        => 'Variable Trigger(s)',
+'channel_search_get_trigger_desc'   => 'This is the name of the GET/POST variable that should trigger the results tag to perform the search.',
+
+'channel_search_empty_trigger' 		=> 'Trigger if empty?',
+'channel_search_empty_trigger_desc' => 'If this is set to True, the search will be performed if the Variable Triggers are set but have empty values. By default, the Variable Triggers must be set and contain some value to trigger the search.',
+
+'channel_search_prevent_search_trigger' => 'Prevent Search Trigger',
+'channel_search_prevent_search_trigger_desc' => 'This is the name of the GET/POST variable that will prevent the search from being searched if it is set.',
 
 'channel_search_manage_rules'       => 'Manage Rules > ',
 'channel_search_new_rule'           => 'New Rule > ',
