@@ -200,33 +200,65 @@ class Channel_search {
 		$group_id 	   = $this->param('group_id');
 		$parent_id 	   = $this->param('parent_id');
 
+		$url_title 	   = $this->param('url_title');
+		$entry_id 	   = $this->param('entry_id');
 		$cat_url_title = $this->param('cat_url_title');
 		$cat_id 	   = $this->param('cat_id');
 		$cat_name 	   = $this->param('cat_name');
 
 		$where = array();
 
-		if($cat_id !== FALSE)
+		if($url_title || $entry_id)
+		{
+			$entry_where = array();
+
+			if($url_title)
+			{
+				$entry = $this->EE->channel_data->get_entries(array(
+					'where' => array(
+						'url_title' => $url_title
+					),
+					'limit' => 1
+				));
+
+				if($entry->num_rows() == 1)
+				{
+					$entry_id = $entry->row('entry_id');
+				}
+			}
+
+			if($entry_id)
+			{
+				$cat    = $this->_get_last_category_from_entry($entry_id);
+			
+				if($cat)
+				{
+					$cat_id = $cat['cat_id'];
+				}
+			}
+		}
+
+		if($cat_id !== FALSE && !empty($cat_id))
 		{
 			$where['cat_id'] = $cat_id;
 		}
 
-		if($group_id !== FALSE)
+		if($group_id !== FALSE && !empty($group_id))
 		{
 			$where['group_id'] = $group_id;
 		}
 
-		if($parent_id !== FALSE)
+		if($parent_id === '0' || ($parent_id !== FALSE && !empty($parent_id)))
 		{
 			$where['parent_id'] = $parent_id;
 		}
 
-		if($cat_url_title !== FALSE)
+		if($cat_url_title !== FALSE && !empty($cat_url_title))
 		{
 			$where['cat_url_title'] = $cat_url_title;
 		}
 
-		if($cat_name !== FALSE)
+		if($cat_name !== FALSE && !empty($cat_name))
 		{
 			$where['cat_name'] = $cat_name;
 		}
@@ -237,11 +269,39 @@ class Channel_search {
 		}
 
 		$categories = $this->_get_categories($where);
+
 		$categories = $this->_show_trail($categories);
 		$categories = $this->_show_param($categories, 'show_parent', 'cat_id', 'parent_id');
 		$categories = $this->_show_param($categories, 'show_children', 'parent_id', 'cat_id');
 		$categories = $this->_show_parents($categories);
 		$categories = $this->_show_siblings($categories);
+
+		$count = 0;
+		$total = count($categories);
+
+		foreach($categories as $index => $category)
+		{
+			$categories[$index]['parent_category'] = $this->_get_parent_category($category['cat_id']);
+			$categories[$index]['is_last_category'] = FALSE;
+			$categories[$index]['is_not_last_category'] = TRUE;
+			$categories[$index]['is_not_first_category'] = TRUE;
+			$categories[$index]['is_first_category'] = FALSE;
+			$categories[$index]['total_categories'] = $total;
+
+			if($count == 0)
+			{
+				$categories[$index]['is_first_category'] = TRUE;
+				$categories[$index]['is_not_first_category'] = FALSE;
+			}
+
+			if($count + 1 == $total)
+			{
+				$categories[$index]['is_last_category'] = TRUE;
+				$categories[$index]['is_not_last_category'] = FALSE;
+			}
+
+			$count++;
+		}
 
 		if(!count($categories))
 		{
@@ -251,6 +311,33 @@ class Channel_search {
 		$categories = $this->EE->channel_data->utility->add_prefix($this->param('prefix', ''), $categories);
 
 		return $this->parse($categories);
+	}
+
+	private function _get_last_category_from_entry($entry_id)
+	{
+		$entry_posts = $this->EE->channel_data->get('category_posts', array(
+			'where' => array(
+				'entry_id' => $entry_id
+			)
+		));
+
+		$cat_where = array();
+
+		foreach($entry_posts->result() as $row)
+		{
+			$cat_where[] = 'or '.$row->cat_id;
+		}
+
+		$categories = $this->EE->channel_data->get_categories(array(
+			'where' => array(
+				'cat_id'    => $cat_where,
+				'site_id'   => config_item('site_id')
+			),
+			'order_by' => 'parent_id asc, cat_order asc',
+			'sort'     => ''
+		));
+
+		return $this->_get_last_child_category($categories->row('cat_id'), $categories->result_array());
 	}
 
 	private function _show_trail($categories)
@@ -264,6 +351,175 @@ class Channel_search {
 		}
 
 		return $categories;
+	}
+
+	/*
+	private function _build_tree($categories, $tree = array())
+	{
+		$tree = array();
+
+		$fake_tree = array(
+			 1 => array(
+				'parent' => array(
+					'cat_id' => 1
+				),
+				'children' => array(
+					25 => array(
+						'parent' => array(
+							'cat_id' => 25
+						),
+						'children' => array(
+							33 => array(
+								'parent' => array(
+									'cat_id' => 33
+								),
+								'children' => array(
+									34 => array(
+										'parent' => array(
+											'cat_id' => 34
+										),
+										'children' => array()
+									)
+								)
+							)	
+						)
+					)
+				)
+			)
+		);
+
+		$fake_tree = $this->_append_to_tree(0, array('cat_id' => 123), $fake_tree);
+
+		var_dump();
+		exit();
+
+		foreach($categories as $cat_index => $category)
+		{
+			var_dump($category);exit();
+
+			if($category['parent_id'] != '0')
+			{
+				$this->_append_to_tree($category, $tree);
+			}
+			else
+			{
+				exit('stop on parent');
+			}
+		}
+
+		exit('stop');
+	}
+	*/
+
+	private function _get_root_category($cat_id, $categories)
+	{
+		$return = FALSE;
+
+		foreach($categories as $cat_index => $category)
+		{
+			if($cat_id == $category['cat_id'])
+			{
+				if($category['parent_id'] == 0)
+				{
+					$return = $category;
+				}
+				else
+				{
+					$return = $this->_get_root_category($category['parent_id'], $categories);
+				}
+			}
+		}
+
+		return $return;
+	}
+
+	private function _get_last_child_category($cat_id, $categories, $return = FALSE, $debug = FALSE)
+	{
+		foreach($categories as $cat_index => $category)
+		{
+			if($cat_id == $category['parent_id'])
+			{
+				$next_node = $this->_get_last_child_category($category['cat_id'], $categories, $category, TRUE);
+				
+				if($next_node)
+				{
+					$return = $next_node;
+				}
+			}
+		}
+
+		return $return;
+	}
+
+	private function _exists_in_tree($cat_id, $tree)
+	{
+		$return = FALSE;
+
+		foreach($tree as $node_id => $node)
+		{
+			if($cat_id == $node_id)
+			{
+				$return = TRUE;
+			}
+
+			else if(isset($node['children']) && count($node['children']) > 0)
+			{
+				if(!$return)
+				{
+					$return = $this->_exists_in_tree($cat_id, $node['children']);
+				}
+			}
+		}
+
+		return $return;
+	}
+
+	private function _append_to_tree($append_id, $append, $tree, $stop = FALSE)//, $parent, $children)
+	{
+		foreach($tree as $node_id => $node)
+		{
+			if($append_id == 0)
+			{
+				$tree[$append['cat_id']] = array(
+					'parent' => $append,
+					'children' => array()
+				);
+			}
+
+			else if($append_id == $node_id)
+			{
+				$tree[$node_id]['children'][$append['cat_id']] = array(
+					'parent' => $append,
+					'children' => array()
+				);
+			}
+			
+			else if(isset($node['children']) && count($node['children']) > 0)
+			{
+				$tree[$node_id]['children'] = $this->_append_to_tree($append_id, $append, $node['children']);
+			}
+		}
+
+		return $tree;
+	}
+	
+	private function _get_category_from_tree($tree, $category)
+	{
+		$return = FALSE;
+
+		foreach($tree as $parent_id => $branch)
+		{
+			if($category->cat_id == $parent_id)
+			{
+				exit('match');
+			}
+			else
+			{
+				var_dump($category->cat_id, $parent_id, $branch);exit();
+			}
+		}
+
+		return $return;
 	}
 
 	private function _build_trail($category, $categories = array(), $return = array())
@@ -344,10 +600,13 @@ class Channel_search {
 						'group_id' => $category['group_id'],
 						$where_key => $category[$where_key]
 					));
+
+					$return = $show_cats;
 				}
-
-				$return = array_merge($show_cats, $return);
-
+				else
+				{
+					$return = array_merge($show_cats, $return);
+				}
 			}
 
 			return $return;
@@ -370,7 +629,6 @@ class Channel_search {
 			'sort' 		=> $this->param('sort', 'desc')
 		))->result_array();
 	}
-
 
 /*
 	private function _append_to_tree($tree, $category, $parent)//, $parent, $children)
@@ -402,19 +660,22 @@ class Channel_search {
 
 		return $return;
 	}
+	*/
 
-	private function _get_parent_category($cat_id, $categories)
+	private function _get_parent_category($cat_id, $categories = FALSE)
 	{
-		foreach($categories as $parent_id => $category_group)
+		if(!$categories)
 		{
-			foreach($category_group as $category)
-			{
-				if($category->cat_id == $cat_id)
-				{
-					return $category;
-				}
-			}
+			$categories = $this->_get_categories();
 		}
+
+		foreach($categories as $parent_id => $category)
+		{
+			if($category['cat_id'] == $cat_id)
+			{
+				return $category;
+			}
+		}	
 	}
 
 	private function _get_child_categories($cat_id, $categories)
@@ -431,7 +692,7 @@ class Channel_search {
 
 		return $return;
 	}
-*/
+
 	public function segments()
 	{
 		$start = $this->param('start', FALSE, FALSE, TRUE);
@@ -471,10 +732,10 @@ class Channel_search {
 		}
 
 		$prepend = $this->param('prepend', '');
-		$prepend = !empty($prepend) && !empty($return) ? $prepend . '/': '';
+		$prepend = !empty($prepend) && !empty($return) ? $prepend : '';
 
 		$append = $this->param('append', '');
-		$append = !empty($append) && !empty($return) ? $append . '/': '';
+		$append = !empty($append) && !empty($return) ? $append : '';
 
 		return strtolower($prepend.implode('/', $return).$append);
 	}
@@ -687,6 +948,11 @@ class Channel_search {
 		
 		$results = $this->EE->channel_search_lib->search($id, $order_by, $sort, $limit, $offset, $this->param('export', FALSE));
 		
+		if(!$results)
+		{
+			return;
+		}
+
 		if(!$limit)
 		{
 			$limit = $results->grand_total;
