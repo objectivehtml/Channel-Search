@@ -79,7 +79,7 @@ class Channel_search_lib {
 			foreach($this->trim_array(explode(',', $search->get_trigger)) as $trigger)
 			{
 				$trigger = trim($trigger);
-				$value   = $this->EE->input->get_post($trigger);
+				$value   = trim($this->EE->input->get_post($trigger));
 				
 				if($search->empty_trigger != 'true')
 				{
@@ -441,6 +441,8 @@ class Channel_search_lib {
 			$this->EE->channel_search_history->insert_history($id, array_merge($_GET, $_POST), trim($sql));
 		}
 		
+		$this->EE->TMPL->tagparams['channel_search_result_tag'] = 'yes';
+
 		$response = (object) array_merge(array(
 			'response' => $has_searched ? $this->EE->db->query($sql) : FALSE,
 			'fields'   => $fields,
