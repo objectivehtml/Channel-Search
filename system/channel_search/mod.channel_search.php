@@ -1106,6 +1106,11 @@ class Channel_search {
 			$return = date($format, preg_match('/^\d*$/', $return) ? $return : ($strtotime ? strtotime($strtotime, strtotime($return)) : strtotime($return)));	
 		}
 		
+		if(is_array($return))
+		{
+			$return = implode($this->param('delimeter', '|'), $return);
+		}
+
 		return $return; 
 	}
 	
