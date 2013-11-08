@@ -20,9 +20,11 @@ $lang = array(
 'channel_search_prevent_search_trigger' => 'Prevent Search Trigger',
 'channel_search_prevent_search_trigger_desc' => 'This is the name of the GET/POST variable that will prevent the search from being searched if it is set.',
 
-'channel_search_manage_rules'       => 'Manage Rules > ',
-'channel_search_new_rule'           => 'New Rule > ',
-'channel_search_edit_rule'          => 'Edit Rule > ',
+'channel_search_manage_rules'       => 'Manage Rules',
+'channel_search_new_rule'           => 'New Rule',
+'channel_search_edit_rule'          => 'Edit Rule',
+'channel_search_edit_search'        => 'Edit Search',
+'channel_search_new_search'         => 'New Search',
 'channel_search_back_to_rules'      => 'Back to Rules',
 'channel_search_back_to_home'       => 'Back to Home',
 

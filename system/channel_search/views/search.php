@@ -37,12 +37,14 @@
 	
 </script>
 
+<!--
 <h3>Channels</h3>
 
 <p><?php echo $channel_names ?></p>
+-->
 
 <?php if($modifiers->num_rows() == 0): ?>
-	<p class="alert-box warning">There are no modifiers attached to this search.</p>
+	<p class="alert-box warning">You have not added any search rules yet.</p>
 <?php else: ?>
 	<table class="sortable mainTable padTable" cellpadding="0" cellspacing="0">
 		<thead>

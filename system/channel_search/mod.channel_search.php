@@ -12,46 +12,9 @@ class Channel_search {
 		$this->EE->load->helper('addon');
 	}
 	
-	public function _setter()
-	{
-		if($this->EE->TMPL->tagparams)
-		{
-			foreach(array('set', 'unset') as $type)
-			{
-				foreach($this->EE->TMPL->tagparams as $param => $value)
-				{
-					$pattern = '/^'.$type.':/';
-					
-					if(preg_match($pattern, $param))
-					{
-						$param = preg_replace($pattern, '', $param);
-						
-						if($type == 'set')
-						{
-							$current = $this->EE->input->get_post($param);
-							$current_time = strtotime($value, strtotime($current ? $current : $value));
-							$format  = $this->param('format:'.$param);
-							$value   = $format ? date($format,  (preg_match('/^\d*$/', $current) ? $current : $current_time)) : $value;
-
-							$_GET[$param]  = $value;
-							$_POST[$param] = $value;
-						}
-						else
-						{
-							unset($this->EE->TMPL->tagparams[$param]);
-							
-							unset($_GET[$param]);
-							unset($_POST[$param]);	
-						}
-					}
-				}
-			}
-		}
-	}
-
 	public function char_count()
 	{
-		return strlen($this->param('string', $this->EE->TMPL->tagdata));
+		return strlen(trim($this->param('string', $this->EE->TMPL->tagdata)));
 	}
 
 	public function random_hash()
@@ -61,19 +24,46 @@ class Channel_search {
 	
 	public function date()
 	{
-		$return = strtotime($this->param('string', $this->param('time', $this->EE->localize->now)));
-		
-		if($format = $this->param('format', $this->param('date_format')))
+		$date = $this->param('string', $this->param('time', $this->EE->TMPL->tagdata ? trim($this->EE->TMPL->tagdata) : FALSE));
+
+		if(!$date)
 		{
-			return date(str_replace('%', '', $format), $return);
+			$date = $this->EE->localize->now;
 		}
 
-		return $return;
+		if(!preg_match('/^\d*$/', $date))
+		{
+			$date = strtotime($date);
+		}
+
+		if($format = $this->param('format', $this->param('date_format')))
+		{
+			return date(str_replace('%', '', $format), $date);
+		}
+
+		return $date;
 	}
 	
 	public function entry_has_category()
 	{
-		$entry_id = $this->param('entry_id', FALSE, FALSE, TRUE);
+		$entry_id = $this->param('entry_id', FALSE, FALSE);
+
+		if(!$entry_id)
+		{
+			$entry = $this->EE->channel_data->get_entries(array(
+				'where' => array(
+					'url_title' => $this->param('url_title', FALSE, FALSE, TRUE)
+				)
+			));
+
+			$entry_id = $entry->row('entry_id');
+
+			if(!$entry_id)
+			{
+				return FALSE;
+			}
+		}
+
 		$posts    = $this->EE->channel_data->get_category_post($entry_id);
 		$value    = 0;
 		
@@ -109,7 +99,9 @@ class Channel_search {
 	
 	public function current_url()
 	{
-		return page_url(TRUE, $this->param('params', TRUE, TRUE), FALSE);
+		$vars = $this->param('vars', $this->param('params', TRUE, TRUE), TRUE);
+
+		return page_url(TRUE, $vars, FALSE);
 	}
 	
 	public function set_default()
@@ -135,8 +127,14 @@ class Channel_search {
 				{
 					$value = trim($this->param('value', $this->EE->TMPL->tagdata));
 				
-					$_GET[$name]  = $value;
-					$_POST[$name] = $value;
+					if($this->param('type', 'get') == 'get')
+					{
+						$_GET[$name]  = $value;
+					}
+					else
+					{
+						$_POST[$name] = $value;
+					}
 				}
 			}
 		}
@@ -163,11 +161,55 @@ class Channel_search {
 	{
 		$vars = array();
 		
+		foreach($this->EE->TMPL->tagparams as $param => $value)
+		{
+			$pattern = '/^default:/';
+
+			if(preg_match($pattern, $param))
+			{
+				$param = preg_replace($pattern, '', $param);
+
+				if(!$this->EE->input->get_post($param))
+				{
+					if($this->param('type', 'get') == 'get')
+					{
+						$_GET[$param] = $value;
+					}
+					else
+					{
+						$_POST[$param] = $value;
+					}
+				}
+			}
+		}
+
 		foreach(array_merge($_GET, $_POST) as $index => $value)
 		{
-			$vars[$this->param('prefix', 'form').':'.$index] = $this->EE->input->get_post($index, TRUE);
+			$vars[$index] = $this->EE->input->get_post($index, TRUE);
+
+			if($format = str_replace('%', '', $this->param('format:'.$index)))
+			{
+				$vars[$index] = date($format, strtotime($vars[$index]));
+			}
+
+			$delimeter = $this->param('delimeter:', $index);
+
+			if(!$delimeter)
+			{
+				$delimeter = '|';
+			}
+
+			if(is_array($vars[$index]))
+			{
+				$vars[$index] = implode($delimeter, $vars[$index]);
+			}
 		}
 		
+		if($prefix = $this->param('prefix', 'form'))
+		{
+			$vars = $this->EE->channel_search_lib->add_prefix($prefix, $vars);
+		}
+
 		if(!$return_vars)
 		{
 			return $this->parse(array($vars));
@@ -185,9 +227,18 @@ class Channel_search {
 
 	public function segment_exists()
 	{
+		$segment  = $this->param('name', $this->param('segment'));
 		$segments = $this->EE->uri->segment_array();
 
-		if(in_array(strtolower($this->param('name', $this->param('segment'))), $segments))
+		if(preg_match('/^\d*$/', $segment))
+		{
+			if(isset($segments[$segment]))
+			{
+				return TRUE;
+			}
+		}
+
+		if(in_array(strtolower($segment), $segments))
 		{
 			return TRUE;
 		}
@@ -313,104 +364,419 @@ class Channel_search {
 		return $this->parse($categories);
 	}
 
-	private function _get_last_category_from_entry($entry_id)
+	public function segments()
 	{
-		$entry_posts = $this->EE->channel_data->get('category_posts', array(
+		$start = $this->param('start', FALSE);
+		$stop  = $this->param('stop', FALSE);
+		$limit = $this->param('limit', FALSE);
+
+		$segments = $this->EE->uri->segment_array();
+
+		$return = array();
+
+		$valid = FALSE;
+		$count = 0;
+
+		if(!$start)
+		{
+			$valid = TRUE;
+		}
+
+		foreach($segments as $index => $segment)
+		{
+			if($stop && $stop == $segment)
+			{
+				$valid = FALSE;
+			}
+
+			if($limit && $count >= $limit)
+			{
+				$valid = FALSE;
+			}
+
+			if($valid)
+			{
+				$return[] = $segment;
+				
+				$count++;
+			}
+
+			if($start && $start == $segment)
+			{
+				$valid = TRUE;
+			}
+		}
+
+		$prepend = $this->param('prepend', '');
+		$prepend = !empty($prepend) && !empty($return) ? $prepend : '';
+
+		$append = $this->param('append', '');
+		$append = !empty($append) && !empty($return) ? $append : '';
+
+		return strtolower($prepend.implode('/', $return).$append);
+	}
+
+	public function url($params = array())
+	{
+		$get  = $_GET;
+		$post = $_POST;
+		
+		$this->_setter();
+		$this->_cache_post();
+	
+		foreach(array_merge($_GET, $_POST) as $index => $value)
+		{
+			if(is_array($value))
+			{
+				$value = implode(',', $value);
+			}
+			
+			$params[$index] = $value;
+		}
+		
+		$return = $this->param('page_url', page_url(TRUE, FALSE)) . '?' . http_build_query($params);
+		
+		$_GET  = $get;
+		$_POST = $post;
+		
+		return $return;
+	}
+	
+	public function form()
+	{
+		$get  = $_GET;
+		$post = $_POST;
+		
+		$this->_setter();
+		$this->_cache_post();
+		
+		$vars   = array();
+		$where  = array();		
+		
+		$id    = $this->param('id', FALSE, FALSE, TRUE);
+		$rules = $this->EE->channel_search_model->get_rule_by_id($id);
+		
+		if($rules->num_rows() == 0)
+		{
+			$this->EE->output->show_user_error('error', lang('channel_search_invalid_search_id'));	
+		}
+		
+		$rules = $rules->row();
+		
+		$attributes = array_merge(array(
+			'method' => 'get',
+			'action' => page_url(TRUE, TRUE, FALSE)
+		), $this->EE->TMPL->tagparams);
+		
+		$vars[0] = $this->vars(TRUE);
+		
+		$channels = $this->EE->channel_data->get_channels(array(
 			'where' => array(
-				'entry_id' => $entry_id
+				'site_id' => config_item('site_id')
 			)
 		));
-
-		$cat_where = array();
-
-		foreach($entry_posts->result() as $row)
+		
+		$channels = $this->EE->channel_data->utility->reindex('channel_name', $channels->result());
+		
+		$category_groups = array();
+		
+		foreach($this->EE->channel_search_lib->trim_array(explode(',', $rules->channel_names)) as $name)
 		{
-			$cat_where[] = 'or '.$row->cat_id;
+			$category_groups = array_merge($category_groups, explode('|', $channels[$name]->cat_group));
 		}
 
 		$categories = $this->EE->channel_data->get_categories(array(
 			'where' => array(
-				'cat_id'    => $cat_where,
-				'site_id'   => config_item('site_id')
+				'group_id' => $category_groups,
+				'site_id'  => config_item('site_id')
 			),
-			'order_by' => 'parent_id asc, cat_order asc',
-			'sort'     => ''
+			'order_by' => 'parent_id, cat_name',
+			'sort' => 'asc'
 		));
-
-		return $this->_get_last_child_category($categories->row('cat_id'), $categories->result_array());
-	}
-
-	private function _show_trail($categories)
-	{
-		if($this->param('show_trail', FALSE, TRUE))
+		
+		$vars[0]['categories'] = array();
+		
+		foreach($categories->result() as $cat_index => $category)
 		{
-			if(isset($categories[0]))
+			$selected = '';
+			$checked  = '';
+			
+			$form_categories = $this->EE->input->get_post($this->param('category_field', 'category'));
+			
+			if(is_string($form_categories))
 			{
-				return $this->_build_trail($categories[0], $this->_get_categories());
+				$form_categories = explode(',', $form_categories);
 			}
+			
+			if(!is_array($form_categories))
+			{
+				$form_categories = array();
+			}
+			
+			$form_categories = $this->EE->channel_search_lib->trim_array($form_categories);
+			
+			if(in_array($category->{$this->param('category_index', 'cat_url_title')}, $form_categories))
+			{
+				$selected = 'selected="selected';
+				$checked  = 'checked="checked"';
+			}
+			
+			$vars[0]['categories'][] = array(
+				'category_id'   		  => $category->cat_id,
+				'category_parent_id'	  => $category->parent_id,
+				'category_group_id'		  => $category->group_id,
+				'category_name' 		  => $category->cat_name,
+				'category_url_title'      => $category->cat_url_title,
+				'category_description'    => $category->cat_description,
+				'category_image'		  => $category->cat_image,
+				'selected'				  => $selected,
+				'checked'				  => $checked
+			);	
+		}
+		
+		$attribute_string = NULL;
+		
+		foreach($attributes as $index => $value)
+		{
+			$attribute_string .= $index.'="'.$value.'" ';	
 		}
 
-		return $categories;
-	}
+		$has_searched = $this->EE->channel_search_lib->has_searched($rules);
 
-	/*
-	private function _build_tree($categories, $tree = array())
-	{
-		$tree = array();
+		$vars[0]['has_searched'] 	  = $has_searched;
+		$vars[0]['has_not_searched'] = $has_searched ? false : true;
 
-		$fake_tree = array(
-			 1 => array(
-				'parent' => array(
-					'cat_id' => 1
-				),
-				'children' => array(
-					25 => array(
-						'parent' => array(
-							'cat_id' => 25
-						),
-						'children' => array(
-							33 => array(
-								'parent' => array(
-									'cat_id' => 33
-								),
-								'children' => array(
-									34 => array(
-										'parent' => array(
-											'cat_id' => 34
-										),
-										'children' => array()
-									)
-								)
-							)	
-						)
-					)
-				)
-			)
+		$validation = array(
+			'success' 		 => TRUE,
+			'errors'         => array(),
+			'validation_ran' => FALSE
 		);
 
-		$fake_tree = $this->_append_to_tree(0, array('cat_id' => 123), $fake_tree);
-
-		var_dump();
-		exit();
-
-		foreach($categories as $cat_index => $category)
+		if($has_searched)
 		{
-			var_dump($category);exit();
-
-			if($category['parent_id'] != '0')
-			{
-				$this->_append_to_tree($category, $tree);
-			}
-			else
-			{
-				exit('stop on parent');
-			}
+			$validation = $this->EE->channel_search_lib->validate();
+			$validation['validation_ran'] = TRUE;
 		}
 
-		exit('stop');
-	}
-	*/
+		$vars[0] = array_merge($vars[0], $validation);
 
+		$form = '<form '.trim($attribute_string).'>'.$this->parse($vars).'</form>';
+		$form = preg_replace('/{form:.+}/', '', $form);
+				
+		$_GET  = $get;
+		$_POST = $post;
+		
+		return $form;
+	}
+	
+	public function total_results()
+	{
+		$get  = $_GET;
+		$post = $_POST;
+		
+		$this->_setter();
+		
+		$id      = $this->param('id', FALSE, FALSE, TRUE);	
+		$results = $this->EE->channel_search_lib->search($id, 'entry_id', 'asc', 'all', 0, $this->param('export', FALSE));
+		
+		if(!$this->EE->TMPL->tagdata)
+		{
+			$return = $results->grand_total;
+		}
+		else
+		{
+			$return = array(
+				array(
+					'total_results' => $results->grand_total,
+					'data' 			=> $results->result_array()
+				)
+			);
+
+
+var_dump($return);exit();
+
+			if($prefix = $this->param('prefix', ''))
+			{
+				$return = $this->EE->channel_search_lib->add_prefix($prefix, $return);
+			}
+
+			$return = $this->parse($return);
+		}		
+		
+		$_GET  = $get;
+		$_POST = $post;
+		
+		return $return;
+	}
+	
+	public function results()
+	{
+		$get  = $_GET;
+		$post = $_POST;
+		
+		$this->_setter();
+		$this->_cache_post();
+		
+		$id       = $this->param('id', FALSE);		
+		$order_by = $this->param('order_by', $this->param('orderby', 'entry_id'));
+		$sort     = $this->param('sort', 'desc');
+		$limit    = (int) $this->param('limit', 20);
+		$page     = (int) $this->param('page', 1);
+		$offset   = 0;
+		
+		if($page > 1)
+		{
+			$offset = ($page - 1) * $limit;
+		}	
+		
+		$results = $this->EE->channel_search_lib->search($id, $order_by, $sort, $limit, $offset, $this->param('export', FALSE));
+		
+		if(!$results)
+		{
+			return;
+		}
+
+		if(!$limit)
+		{
+			$limit = $results->grand_total;
+		}
+		
+
+		$this->EE->TMPL->tagparams['channel_search_result_tag'] = TRUE;
+		
+		if (preg_match('/'.LD.'if '.$this->param('prefix', '').'no_results'.RD.'(.*?)'.LD.'\/if'.RD.'/s', $this->EE->TMPL->tagdata, $match))
+		{
+			$this->EE->TMPL->tagdata = str_replace($match[0], '', $this->EE->TMPL->tagdata);
+			
+			$this->EE->TMPL->no_results = $match[1];
+		}
+		
+		if($results === FALSE || ($results->has_searched && ($results->response === FALSE || $results->response->num_rows() == 0)))
+		{
+			$vars = array();
+			
+			foreach($results->rules as $rule)
+			{
+				$vars = array_merge($vars, $rule->get_vars());
+			}
+			
+			return $this->parse(array($vars), $this->EE->TMPL->no_results());
+		}
+		
+		$vars = array(
+			//'total_results'  => $results->response->num_rows(),
+			'grand_total'      => $results->grand_total,
+			'sort'             => $sort,
+			'order_by'         => $order_by,
+			'limit'            => $limit,
+			'offset'           => $offset,
+			'page'             => $page,
+			'has_searched'     => $results->has_searched,
+			'has_not_searched' => $results->has_not_searched
+		);
+		
+		$vars['total_pages']   = ceil($results->grand_total / $limit);
+		
+		$_GET['page'] = $page - 1;
+		
+		$vars['prev_page']     = ($page - 1 > 0 ? $page - 1 : 1);
+		$vars['prev_page_url'] = $page - 1 > 0  ? page_url(TRUE, TRUE, FALSE) : FALSE;
+		
+		$_GET['page'] = $page + 1;
+		
+		$vars['next_page']     = $page + 1 < $vars['total_pages'] ? $page + 1 : $page;
+	
+		$vars['next_page_url'] = $vars['next_page'] < $vars['total_pages'] ? page_url(TRUE, TRUE, FALSE) : FALSE; 
+		
+		$_GET['page'] = $page;
+		
+		$vars['current_page']  = $page;
+		$vars['is_first_page'] = $page == 1 ? TRUE : FALSE;
+		$vars['is_last_page']  = $page == $vars['total_pages'] ? TRUE : FALSE;
+		
+		$this->EE->load->library('entries_lib');
+		
+		$entry_ids = array();
+		
+		if($results->response)
+		{
+			foreach($results->response->result() as $entry)
+			{
+				$entry_ids[] = $entry->entry_id;	
+			}
+		}
+		
+		if($results->has_searched)
+		{
+			$this->EE->session->set_cache('channel_search', 'search_results', $results);
+			
+			$this->EE->TMPL->tagdata = $this->EE->entries_lib->entries(array(
+				'channel'     => $results->channels,
+				'entry_id'    => implode($entry_ids, '|'),
+				'fixed_order' => implode($entry_ids, '|'),
+				'limit'       => $limit,
+				'status' 	  => implode('|', $results->statuses)
+			));
+		}
+		
+		$this->EE->TMPL->tagdata = $this->parse(array($vars));
+		
+		$_GET  = $get;
+		$_POST = $post;
+		
+		return $this->EE->TMPL->tagdata;
+	}
+	
+	public function set()
+	{
+		if($value = $this->param('value', $this->EE->TMPL->tagdata))
+		{
+			$name = $this->param('name', (isset($this->EE->TMPL->tagparts[2]) ? $this->EE->TMPL->tagparts[2] : FALSE));
+			
+			if($name)
+			{
+				if($type = $this->param('type', 'get') == 'get')
+				{
+					$_GET[$name] = $value;
+				}
+				else
+				{
+					$_POST[$name] = $value;
+				}
+			}
+		}
+		
+	}
+	
+	public function reset()
+	{
+		$name = $this->param('name', isset($this->EE->TMPL->tagparts[2]) ? $this->EE->TMPL->tagparts[2] : false);
+		
+		unset($_GET[$name]);
+		unset($_POST[$name]);
+	}
+	
+	public function get()
+	{
+		$strtotime = $this->param('strtotime');
+		$default   = $this->param('default', NULL);
+		$name      = $this->param('name', isset($this->EE->TMPL->tagparts[2]) ? $this->EE->TMPL->tagparts[2] : false);
+		$return    = $this->EE->input->get_post($name);
+		$return    = $return !== FALSE ? $return : $default;
+		
+		if($format = str_replace('%', '', $this->param('format')))
+		{
+			$return = date($format, preg_match('/^\d*$/', $return) ? $return : ($strtotime ? strtotime($strtotime, strtotime($return)) : strtotime($return)));	
+		}
+		
+		if(is_array($return))
+		{
+			$return = implode($this->param('delimeter', '|'), $return);
+		}
+
+		return $return; 
+	}
+	
 	private function _get_root_category($cat_id, $categories)
 	{
 		$return = FALSE;
@@ -630,37 +996,45 @@ class Channel_search {
 		))->result_array();
 	}
 
-/*
-	private function _append_to_tree($tree, $category, $parent)//, $parent, $children)
+	private function _get_last_category_from_entry($entry_id)
 	{
-		$existing_cat    = $this->_get_category_from_tree($tree, $category);
-		$existing_parent = $this->_get_category_from_tree($tree, $category);
+		$entry_posts = $this->EE->channel_data->get('category_posts', array(
+			'where' => array(
+				'entry_id' => $entry_id
+			)
+		));
 
-		if(!$existing_cat)
+		$cat_where = array();
+
+		foreach($entry_posts->result() as $row)
 		{
-			$tree[$category->cat_id][] = $category;
-		}
-	}
-
-	private function _get_category_from_tree($tree, $category)
-	{
-		$return = FALSE;
-
-		foreach($tree as $parent_id => $branch)
-		{
-			if($category->cat_id == $parent_id)
-			{
-				exit('match');
-			}
-			else
-			{
-				var_dump($category->cat_id, $parent_id, $branch);exit();
-			}
+			$cat_where[] = 'or '.$row->cat_id;
 		}
 
-		return $return;
+		$categories = $this->EE->channel_data->get_categories(array(
+			'where' => array(
+				'cat_id'    => $cat_where,
+				'site_id'   => config_item('site_id')
+			),
+			'order_by' => 'parent_id asc, cat_order asc',
+			'sort'     => ''
+		));
+
+		return $this->_get_last_child_category($categories->row('cat_id'), $categories->result_array());
 	}
-	*/
+
+	private function _show_trail($categories)
+	{
+		if($this->param('show_trail', FALSE, TRUE))
+		{
+			if(isset($categories[0]))
+			{
+				return $this->_build_trail($categories[0], $this->_get_categories());
+			}
+		}
+
+		return $categories;
+	}
 
 	private function _get_parent_category($cat_id, $categories = FALSE)
 	{
@@ -693,357 +1067,6 @@ class Channel_search {
 		return $return;
 	}
 
-	public function segments()
-	{
-		$start = $this->param('start', FALSE, FALSE, TRUE);
-		$stop  = $this->param('stop', FALSE);
-		$limit = $this->param('limit', FALSE);
-
-		$segments = $this->EE->uri->segment_array();
-
-		$return = array();
-
-		$valid = FALSE;
-		$count = 0;
-
-		foreach($segments as $index => $segment)
-		{
-			if($valid && $stop !== FALSE && $segment == $stop)
-			{
-				$valid = FALSE;
-			}
-			
-			if($valid)
-			{
-				$return[] = $segment;
-			}
-
-			if($valid && $limit !== FALSE && $count > $limit)
-			{
-				$valid = FALSE;
-			}
-
-			if($start == $segment)
-			{
-				$valid = TRUE;
-			}
-
-			$count++;
-		}
-
-		$prepend = $this->param('prepend', '');
-		$prepend = !empty($prepend) && !empty($return) ? $prepend : '';
-
-		$append = $this->param('append', '');
-		$append = !empty($append) && !empty($return) ? $append : '';
-
-		return strtolower($prepend.implode('/', $return).$append);
-	}
-
-	public function url($params = array())
-	{
-		$get  = $_GET;
-		$post = $_POST;
-		
-		$this->_setter();
-		$this->_cache_post();
-	
-		foreach(array_merge($_GET, $_POST) as $index => $value)
-		{
-			if(is_array($value))
-			{
-				$value = implode(',', $value);
-			}
-			
-			$params[$index] = $value;
-		}
-		
-		$return = $this->param('page_url', page_url(TRUE, FALSE)) . '?' . http_build_query($params);
-		
-		$_GET  = $get;
-		$_POST = $post;
-		
-		return $return;
-	}
-	
-	public function form()
-	{
-		$get  = $_GET;
-		$post = $_POST;
-		
-		$this->_setter();
-		$this->_cache_post();
-		
-		$vars   = array();
-		$where  = array();		
-		
-		$id    = $this->param('id', FALSE, FALSE, TRUE);
-		$rules = $this->EE->channel_search_model->get_rule_by_id($id);
-		
-		if($rules->num_rows() == 0)
-		{
-			$this->EE->output->show_user_error('error', lang('channel_search_invalid_search_id'));	
-		}
-		
-		$rules = $rules->row();
-		
-		$attributes = array_merge(array(
-			'method' => 'get',
-			'action' => page_url(TRUE, TRUE, FALSE)
-		), $this->EE->TMPL->tagparams);
-		
-		$vars[0] = $this->vars(TRUE);
-		
-		$channels = $this->EE->channel_data->get_channels(array(
-			'where' => array(
-				'site_id' => config_item('site_id')
-			)
-		));
-		
-		$channels = $this->EE->channel_data->utility->reindex('channel_name', $channels->result());
-		
-		$category_groups = array();
-		
-		foreach($this->EE->channel_search_lib->trim_array(explode(',', $rules->channel_names)) as $name)
-		{
-			$category_groups = array_merge($category_groups, explode('|', $channels[$name]->cat_group));
-		}
-
-		$categories = $this->EE->channel_data->get_categories(array(
-			'where' => array(
-				'group_id' => $category_groups,
-				'site_id'  => config_item('site_id')
-			),
-			'order_by' => 'parent_id, cat_name',
-			'sort' => 'asc'
-		));
-		
-		$vars[0]['categories'] = array();
-		
-		foreach($categories->result() as $cat_index => $category)
-		{
-			$selected = '';
-			$checked  = '';
-			
-			$form_categories = $this->EE->input->get_post($this->param('category_name', 'category'));
-			
-			if(is_string($form_categories))
-			{
-				$form_categories = explode(',', $form_categories);
-			}
-			
-			if(!is_array($form_categories))
-			{
-				$form_categories = array();
-			}
-			
-			$form_categories = $this->EE->channel_search_lib->trim_array($form_categories);
-			
-			if(in_array($category->{$this->param('category_index', 'cat_url_title')}, $form_categories))
-			{
-				$selected = 'selected="selected';
-				$checked  = 'checked="checked"';
-			}
-			
-			$vars[0]['categories'][] = array(
-				'category_id'   		  => $category->cat_id,
-				'category_parent_id'	  => $category->parent_id,
-				'category_group_id'		  => $category->group_id,
-				'category_name' 		  => $category->cat_name,
-				'category_url_title'      => $category->cat_url_title,
-				'category_description'    => $category->cat_description,
-				'category_image'		  => $category->cat_image,
-				'selected'				  => $selected,
-				'checked'				  => $checked
-			);	
-		}
-		
-		$attribute_string = NULL;
-		
-		foreach($attributes as $index => $value)
-		{
-			$attribute_string .= $index.'="'.$value.'" ';	
-		}
-
-		$has_searched = $this->EE->channel_search_lib->has_searched($rules);
-
-		$vars[0]['has_searched'] 	  = $has_searched;
-		$vars[0]['has_not_searched'] = $has_searched ? false : true;
-
-		$validation = array(
-			'success' 		 => TRUE,
-			'errors'         => array(),
-			'validation_ran' => FALSE
-		);
-
-		if($has_searched)
-		{
-			$validation = $this->EE->channel_search_lib->validate();
-
-			$validation['validation_ran'] = TRUE;
-		}
-
-		$vars[0] = array_merge($vars[0], $validation);
-
-		$form = '<form '.trim($attribute_string).'>'.$this->parse($vars).'</form>';
-		$form = preg_replace('/{form:.+}/', '', $form);
-				
-		$_GET  = $get;
-		$_POST = $post;
-		
-		return $form;
-	}
-	
-	public function total_results()
-	{
-		$get  = $_GET;
-		$post = $_POST;
-		
-		$this->_setter();
-		
-		$id      = $this->param('id', FALSE, FALSE, TRUE);	
-		$results = $this->EE->channel_search_lib->search($id, 'entry_id', 'asc', 'all', 0, $this->param('export', FALSE));
-		
-		if(!$this->EE->TMPL->tagdata)
-		{
-			$return = $results->grand_total;
-		}
-		else
-		{
-			$prefix = $this->param('prefix', '');
-			
-			$return = $this->parse(array(
-				array(
-					$prefix.'total_results' => $results->grand_total,
-					$prefix.'data' 			=> $results->result_array()
-				)
-			));
-		}		
-		
-		$_GET  = $get;
-		$_POST = $post;
-		
-		return $return;
-	}
-	
-	public function results()
-	{
-		$get  = $_GET;
-		$post = $_POST;
-		
-		$this->_setter();
-		$this->_cache_post();
-		
-		$id       = $this->param('id', FALSE);		
-		$order_by = $this->param('order_by', $this->param('orderby', 'entry_id'));
-		$sort     = $this->param('sort', 'desc');
-		$limit    = (int) $this->param('limit', 20);
-		$page     = (int) $this->param('page', 1);
-		$offset   = 0;
-		
-		if($page > 1)
-		{
-			$offset = ($page - 1) * $limit;
-		}	
-		
-		$results = $this->EE->channel_search_lib->search($id, $order_by, $sort, $limit, $offset, $this->param('export', FALSE));
-		
-		if(!$results)
-		{
-			return;
-		}
-
-		if(!$limit)
-		{
-			$limit = $results->grand_total;
-		}
-		
-
-		$this->EE->TMPL->tagparams['channel_search_result_tag'] = TRUE;
-		
-		if (preg_match('/'.LD.'if '.$this->param('prefix', '').'no_results'.RD.'(.*?)'.LD.'\/if'.RD.'/s', $this->EE->TMPL->tagdata, $match))
-		{
-			$this->EE->TMPL->tagdata = str_replace($match[0], '', $this->EE->TMPL->tagdata);
-			
-			$this->EE->TMPL->no_results = $match[1];
-		}
-		
-		if($results === FALSE || ($results->has_searched && ($results->response === FALSE || $results->response->num_rows() == 0)))
-		{
-			$vars = array();
-			
-			foreach($results->rules as $rule)
-			{
-				$vars = array_merge($vars, $rule->get_vars());
-			}
-			
-			return $this->parse(array($vars), $this->EE->TMPL->no_results());
-		}
-		
-		$vars = array(
-			//'total_results'  => $results->response->num_rows(),
-			'grand_total'      => $results->grand_total,
-			'sort'             => $sort,
-			'order_by'         => $order_by,
-			'limit'            => $limit,
-			'offset'           => $offset,
-			'page'             => $page,
-			'has_searched'     => $results->has_searched,
-			'has_not_searched' => $results->has_not_searched
-		);
-		
-		$vars['total_pages']   = ceil($results->grand_total / $limit);
-		
-		$_GET['page'] = $page - 1;
-		
-		$vars['prev_page']     = ($page - 1 > 0 ? $page - 1 : 1);
-		$vars['prev_page_url'] = $page - 1 > 0  ? page_url(TRUE, TRUE, FALSE) : FALSE;
-		
-		$_GET['page'] = $page + 1;
-		
-		$vars['next_page']     = $page + 1 < $vars['total_pages'] ? $page + 1 : $page;
-	
-		$vars['next_page_url'] = $vars['next_page'] < $vars['total_pages'] ? page_url(TRUE, TRUE, FALSE) : FALSE; 
-		
-		$_GET['page'] = $page;
-		
-		$vars['current_page']  = $page;
-		$vars['is_first_page'] = $page == 1 ? TRUE : FALSE;
-		$vars['is_last_page']  = $page == $vars['total_pages'] ? TRUE : FALSE;
-		
-		$this->EE->load->library('entries_lib');
-		
-		$entry_ids = array();
-		
-		if($results->response)
-		{
-			foreach($results->response->result() as $entry)
-			{
-				$entry_ids[] = $entry->entry_id;	
-			}
-		}
-		
-		if($results->has_searched)
-		{
-			$this->EE->session->set_cache('channel_search', 'search_results', $results);
-			
-			$this->EE->TMPL->tagdata = $this->EE->entries_lib->entries(array(
-				'channel'     => $results->channels,
-				'entry_id'    => implode($entry_ids, '|'),
-				'fixed_order' => implode($entry_ids, '|'),
-				'limit'       => $limit,
-				'status' 	  => implode('|', $results->statuses)
-			));
-		}
-		
-		$this->EE->TMPL->tagdata = $this->parse(array($vars));
-		
-		$_GET  = $get;
-		$_POST = $post;
-		
-		return $this->EE->TMPL->tagdata;
-	}
-	
 	private function _cache_post()
 	{
 		if($this->param('cache_post'))
@@ -1064,56 +1087,6 @@ class Channel_search {
 		}
 	}
 	
-	public function set()
-	{
-		if($value = $this->param('value', $this->EE->TMPL->tagdata))
-		{
-			$name = $this->param('name', (isset($this->EE->TMPL->tagparts[2]) ? $this->EE->TMPL->tagparts[2] : FALSE));
-			
-			if($name)
-			{
-				if($type = $this->param('type', 'get') == 'get')
-				{
-					$_GET[$name] = $value;
-				}
-				else
-				{
-					$_POST[$name] = $value;
-				}
-			}
-		}
-		
-	}
-	
-	public function reset()
-	{
-		$name = $this->param('name', isset($this->EE->TMPL->tagparts[2]) ? $this->EE->TMPL->tagparts[2] : false);
-		
-		unset($_GET[$name]);
-		unset($_POST[$name]);
-	}
-	
-	public function get()
-	{
-		$strtotime = $this->param('strtotime');
-		$default   = $this->param('default', NULL);
-		$name      = $this->param('name', isset($this->EE->TMPL->tagparts[2]) ? $this->EE->TMPL->tagparts[2] : false);
-		$return    = $this->EE->input->get_post($name);
-		$return    = $return !== FALSE ? $return : $default;
-		
-		if($format = $this->param('format'))
-		{
-			$return = date($format, preg_match('/^\d*$/', $return) ? $return : ($strtotime ? strtotime($strtotime, strtotime($return)) : strtotime($return)));	
-		}
-		
-		if(is_array($return))
-		{
-			$return = implode($this->param('delimeter', '|'), $return);
-		}
-
-		return $return; 
-	}
-	
 	private function parse($vars, $tagdata = FALSE)
 	{
 		if($tagdata === FALSE)
@@ -1128,4 +1101,101 @@ class Channel_search {
 	{
 		return $this->EE->channel_search_lib->param($param, $default, $boolean, $required);		
 	}
+
+
+	private function _setter()
+	{
+		if($this->EE->TMPL->tagparams)
+		{
+			foreach(array('set', 'unset') as $type)
+			{
+				foreach($this->EE->TMPL->tagparams as $param => $value)
+				{
+					$pattern = '/^'.$type.':/';
+					
+					if(preg_match($pattern, $param))
+					{
+						$param = preg_replace($pattern, '', $param);
+						
+						if($type == 'set')
+						{
+							$current = $this->EE->input->get_post($param);
+							$current_time = strtotime($value, strtotime($current ? $current : $value));
+							$format  = $this->param('format:'.$param);
+							$value   = $format ? date($format,  (preg_match('/^\d*$/', $current) ? $current : $current_time)) : $value;
+
+							$_GET[$param]  = $value;
+							$_POST[$param] = $value;
+						}
+						else
+						{
+							unset($this->EE->TMPL->tagparams[$param]);
+							
+							unset($_GET[$param]);
+							unset($_POST[$param]);	
+						}
+					}
+				}
+			}
+		}
+	}
+
+	/*
+	private function _build_tree($categories, $tree = array())
+	{
+		$tree = array();
+
+		$fake_tree = array(
+			 1 => array(
+				'parent' => array(
+					'cat_id' => 1
+				),
+				'children' => array(
+					25 => array(
+						'parent' => array(
+							'cat_id' => 25
+						),
+						'children' => array(
+							33 => array(
+								'parent' => array(
+									'cat_id' => 33
+								),
+								'children' => array(
+									34 => array(
+										'parent' => array(
+											'cat_id' => 34
+										),
+										'children' => array()
+									)
+								)
+							)	
+						)
+					)
+				)
+			)
+		);
+
+		$fake_tree = $this->_append_to_tree(0, array('cat_id' => 123), $fake_tree);
+
+		var_dump();
+		exit();
+
+		foreach($categories as $cat_index => $category)
+		{
+			var_dump($category);exit();
+
+			if($category['parent_id'] != '0')
+			{
+				$this->_append_to_tree($category, $tree);
+			}
+			else
+			{
+				exit('stop on parent');
+			}
+		}
+
+		exit('stop');
+	}
+	*/
+
 }

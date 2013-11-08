@@ -1,7 +1,5 @@
 <form action="<?php echo $action?>" method="post">
 	
-	<h3><?php echo $type?> Search</h3>
-	
 	<?php echo $settings?>
 		
 	<?php if(isset($return)): ?>

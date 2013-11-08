@@ -837,5 +837,10 @@ class Channel_search_lib {
 		
 		return $this->EE->security->generate_xid();
 	}
+
+	public function add_prefix($prefix, $data)
+	{
+		return $this->EE->channel_data->utility->add_prefix($prefix, $data);
+	}
 		
 }

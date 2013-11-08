@@ -1,0 +1,4 @@
+.pageContents * { }
+
+.alert-box { margin-bottom: 20px !important; text-shadow: 0 1px 0 rgb(195, 199, 201); font-size: 14px; color: rgb(56, 57, 58); background: grey; background: rgba(0, 0, 0, .2); padding: 12px 10px; border: 1px solid rgb(139, 141, 143); }
+.alert-box.warning { background: rgb(244, 205, 207); border-color: rgb(201, 118, 119); color: rgb(90, 53, 53); text-shadow: 0 1px 0 rgb(255, 214, 216);}
