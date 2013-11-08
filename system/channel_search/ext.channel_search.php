@@ -94,14 +94,20 @@ class Channel_search_ext {
 
 			foreach($result as $index => $row)
 			{
+				$result[$index]['index'] = $index;
+				$result[$index]['is_not_first_row'] = FALSE;
+				$result[$index]['is_not_last_row']  = TRUE;
+
 				if($index > 0)
 				{
 					$result[$index]['is_first_row'] = FALSE;
+					$result[$index]['is_not_first_row'] = TRUE;
 				}
 				
 				if($index < count($result) - 1)
 				{
 					$result[$index]['is_last_row'] = FALSE;
+					$result[$index]['is_not_last_row'] = TRUE;
 				}
 				
 				foreach($cache->rules as $rule)

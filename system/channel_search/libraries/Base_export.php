@@ -41,19 +41,19 @@ abstract class Base_export {
 		exit();		
 	}
 	
+	public function set_name($name)
+	{
+		$this->name = $name;	
+	}
+	
 	public function set_title($title)
 	{
 		$this->title = $title;	
 	}
 	
-	public function get_title()
+	public function set_trigger($trigger)
 	{
-		return $this->title;
-	}
-	
-	public function set_name($name)
-	{
-		$this->name = $name;	
+		$this->trigger = $trigger;	
 	}
 	
 	public function get_name()
@@ -61,9 +61,9 @@ abstract class Base_export {
 		return $this->name;
 	}
 	
-	public function set_trigger($trigger)
+	public function get_title()
 	{
-		$this->trigger = $trigger;	
+		return $this->title;
 	}
 	
 	public function get_trigger()

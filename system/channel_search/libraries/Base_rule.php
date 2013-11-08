@@ -501,7 +501,7 @@ abstract class Base_rule {
 	
 	public function set($prop, $value = array(), $override = FALSE)
 	{
-		if(!$override)
+		if(!$override && is_array($this->$prop))
 		{
 			$this->$prop = array_merge($this->$prop, $value);
 		}

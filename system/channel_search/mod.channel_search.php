@@ -332,7 +332,7 @@ class Channel_search {
 
 		foreach($categories as $index => $category)
 		{
-			$categories[$index]['parent_category'] = $this->_get_parent_category($category['cat_id']);
+			$categories[$index]['parent_category'] = array($this->_get_parent_category($category['cat_id']));
 			$categories[$index]['is_last_category'] = FALSE;
 			$categories[$index]['is_not_last_category'] = TRUE;
 			$categories[$index]['is_not_first_category'] = TRUE;
@@ -359,7 +359,10 @@ class Channel_search {
 			return $this->EE->TMPL->no_results();
 		}
 
-		$categories = $this->EE->channel_data->utility->add_prefix($this->param('prefix', ''), $categories);
+		if($prefix = $this->param('prefix'))
+		{
+			$categories = $this->EE->channel_search_lib->add_prefix($prefix, $categories);
+		}
 
 		return $this->parse($categories);
 	}
@@ -407,13 +410,20 @@ class Channel_search {
 			}
 		}
 
+		$leading_slash = FALSE;
+
+		if(!empty($return) && $this->param('leading_slash', FALSE, TRUE))
+		{
+			$leading_slash = TRUE;
+		}
+
 		$prepend = $this->param('prepend', '');
 		$prepend = !empty($prepend) && !empty($return) ? $prepend : '';
 
 		$append = $this->param('append', '');
 		$append = !empty($append) && !empty($return) ? $append : '';
 
-		return strtolower($prepend.implode('/', $return).$append);
+		return strtolower($prepend.($leading_slash ? '/' : '').implode('/', $return).$append);
 	}
 
 	public function url($params = array())
@@ -592,9 +602,6 @@ class Channel_search {
 				)
 			);
 
-
-var_dump($return);exit();
-
 			if($prefix = $this->param('prefix', ''))
 			{
 				$return = $this->EE->channel_search_lib->add_prefix($prefix, $return);
@@ -641,7 +648,6 @@ var_dump($return);exit();
 			$limit = $results->grand_total;
 		}
 		
-
 		$this->EE->TMPL->tagparams['channel_search_result_tag'] = TRUE;
 		
 		if (preg_match('/'.LD.'if '.$this->param('prefix', '').'no_results'.RD.'(.*?)'.LD.'\/if'.RD.'/s', $this->EE->TMPL->tagdata, $match))
@@ -668,6 +674,7 @@ var_dump($return);exit();
 			'grand_total'      => $results->grand_total,
 			'sort'             => $sort,
 			'order_by'         => $order_by,
+			'orderby'          => $order_by,
 			'limit'            => $limit,
 			'offset'           => $offset,
 			'page'             => $page,
@@ -1047,9 +1054,11 @@ var_dump($return);exit();
 		{
 			if($category['cat_id'] == $cat_id)
 			{
-				return $category;
+				return $this->EE->channel_search_lib->add_prefix('parent', $category);
 			}
-		}	
+		}
+
+		return FALSE;	
 	}
 
 	private function _get_child_categories($cat_id, $categories)
@@ -1107,7 +1116,7 @@ var_dump($return);exit();
 	{
 		if($this->EE->TMPL->tagparams)
 		{
-			foreach(array('set', 'unset') as $type)
+			foreach(array('default', 'set', 'unset') as $type)
 			{
 				foreach($this->EE->TMPL->tagparams as $param => $value)
 				{
@@ -1117,7 +1126,15 @@ var_dump($return);exit();
 					{
 						$param = preg_replace($pattern, '', $param);
 						
-						if($type == 'set')
+						if($type == 'default')
+						{
+							if(!$this->EE->input->get_post($param))
+							{
+								$_GET[$param]  = $value;
+								$_POST[$param] = $value;
+							}
+						}
+						else if($type == 'set')
 						{
 							$current = $this->EE->input->get_post($param);
 							$current_time = strtotime($value, strtotime($current ? $current : $value));
@@ -1130,7 +1147,6 @@ var_dump($return);exit();
 						else
 						{
 							unset($this->EE->TMPL->tagparams[$param]);
-							
 							unset($_GET[$param]);
 							unset($_POST[$param]);	
 						}
