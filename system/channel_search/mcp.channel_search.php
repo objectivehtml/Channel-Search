@@ -203,7 +203,7 @@ class Channel_search_mcp {
 		$this->EE->cp->set_variable('cp_page_title', lang('channel_search_edit_rule') . ' > ' . $rule->get_title());
 		
 		$this->EE->cp->set_right_nav(array(
-			lang('channel_search_back_to_rules') => $this->cp_url('manage_rules') . '&id='.$id,
+			lang('channel_search_back_to_rules') => $this->cp_url('manage_rules') . '&id='.$modifier->row('rule_id'),
 			lang('channel_search_back_to_home') => $this->cp_url('index')
 		));
 

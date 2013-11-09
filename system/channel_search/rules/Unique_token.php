@@ -4,34 +4,34 @@ class Unique_token_channel_search_rule extends Base_rule {
 	
 	protected $title = 'Unique Token Search';
 	
-	protected $description = 'A Unique Token Search allows you to pass an arbitrary unique, and Channel Search will search the channel entries for that unique string. You can then traslate that unique token to a string that is saved in the database. For example, if you are search products have a dropdown field that represents the "brand". This dropdown field is populated by entries in the Brands channels by using the "brand_name" field. A Unique Token search will allow you to pass a URL title of that brand ans search the corresponding "Brand Name".';
+	protected $description = 'This rule is pretty unique and specialized and is based around searching unique tokens in another channel, returning a piece of the related data to use for searching. Say you are searching for "Products" and want to search those products by "Brand". You could configure this rule to search products with a brand url_title, while the actual brand name is stored in the product itself. Since the url_title is a unique token in the "Brands" channel, you could return the "Brand Name" to search in the "Products" channel. You can return any field from the related channel and use it for searching within the parent channel.';
 
 	protected $name = 'unique_token';
 	
-	protected $fields = array(						
-		'channel_name' => array(
-			'label' => 'Channel Name',
-			'description' => 'The name of the related channel.',
-			'type'	=> 'input'
-		),
+	protected $fields = array(	
 		'form_field' => array(
 			'label' => 'Form Field',
 			'description' => 'The name of the form field passing the unique token.',
 			'type'	=> 'input'
-		),
+		),			
 		'field_name' => array(
 			'label' => 'Channel Field Name',
 			'description' => 'The name of the field you are searching.',
 			'type'	=> 'input'
 		),
-		'rel_field_name' => array(
-			'label' => 'Related Channel Field Name',
-			'description' => 'The name of the channel field storing the unique token in the related channel.',
+		'rel_channel_name' => array(
+			'label' => 'Related Channel Name',
+			'description' => 'The name of the related channel.',
 			'type'	=> 'input'
-		),
-		'uri_field' => array(
-			'label' => 'URI Field Name',
-			'description' => 'The name of the field used to pass the data through the URI. (Most likely this is the url_title).',
+		),	
+		'rel_search_field_name' => array(
+			'label' => 'Related Channel Field to Search',
+			'description' => 'The name of the related field you are searching',
+			'type'	=> 'input'
+		),	
+		'rel_field_name' => array(
+			'label' => 'Related Channel Field to Return',
+			'description' => 'The name of the related channel field with the value you want to return that will be used to search the parent channel.',
 			'type'	=> 'input'
 		),
 		'operator' => array(
@@ -62,10 +62,10 @@ class Unique_token_channel_search_rule extends Base_rule {
 			return array();
 		}
 
-		$channel = ee()->channel_data->get_channel_by_name($rules->channel_name);
+		$channel = ee()->channel_data->get_channel_by_name($rules->rel_channel_name);
 		$entry   = ee()->channel_data->get_channel_entries($channel->row('channel_id'), array(
 			'where' => array(
-				$rules->uri_field => $form_data
+				$rules->rel_search_field_name => $form_data
 			)
 		));
 
