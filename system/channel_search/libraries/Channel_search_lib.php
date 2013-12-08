@@ -79,7 +79,16 @@ class Channel_search_lib {
 			foreach($this->trim_array(explode(',', $search->get_trigger)) as $trigger)
 			{
 				$trigger = trim($trigger);
-				$value   = trim($this->EE->input->get_post($trigger));
+				$value   = $this->EE->input->get_post($trigger);
+				
+				if(is_array($value))
+				{
+					$value = $this->trim_array($value);
+				}
+				else
+				{
+					$value = trim($value);
+				}
 				
 				if($search->empty_trigger != 'true')
 				{

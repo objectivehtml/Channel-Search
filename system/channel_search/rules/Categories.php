@@ -188,7 +188,7 @@ class Categories_channel_search_rule extends Base_rule {
 	{
 		if(count($this->cat_where) > 0)
 		{
-			return array('cat_count >= '.count($this->cat_where));
+			return array('cat_count '.$this->settings->rules->count_operator.' '.count($this->cat_where));
 		}
 	}
 }
