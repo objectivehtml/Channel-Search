@@ -7,64 +7,76 @@ class Channel_search_history extends CI_Model {
 		parent::__construct();
 		
 		$this->load->driver('channel_data');
+		$this->load->config('channel_search_config');
 	}
 	
+	public function should_save()
+	{
+		return config_item('channel_search_save_searches');
+	}
+
 	public function insert_history($search_id, $form_data = array(), $sql = NULL)
 	{
-		$terms = $this->_term_string($form_data);
-		
-		$data = array(
-			'site_id'    => config_item('site_id'),
-			'search_id'  => $search_id,
-			'ip_address' => $this->input->ip_address(),
-			'member_id'  => $this->session->userdata('member_id'),
-			'terms'      => $terms,
-			'params'     => json_encode($form_data),
-			'query'      => $this->_build_query($form_data),
-			'sql'        => $sql,
-			'date'		 => date('Y-m-d H:i:s', time())
-		);
-		
-		$this->db->insert('channel_search_history', $data);
-		
-		if(empty($terms))
+		if($this->should_save())
 		{
-			return;	
+			$terms = $this->_term_string($form_data);
+			
+			$data = array(
+				'site_id'    => config_item('site_id'),
+				'search_id'  => $search_id,
+				'ip_address' => $this->input->ip_address(),
+				'member_id'  => $this->session->userdata('member_id'),
+				'terms'      => $terms,
+				'params'     => json_encode($form_data),
+				'query'      => $this->_build_query($form_data),
+				'sql'        => $sql,
+				'date'		 => date('Y-m-d H:i:s', time())
+			);
+			
+			$this->db->insert('channel_search_history', $data);
+			
+			if(empty($terms))
+			{
+				return;	
+			}
+			
+			$this->insert_terms($this->_build_terms($form_data), $search_id, $this->db->insert_id());		
 		}
-		
-		$this->insert_terms($this->_build_terms($form_data), $search_id, $this->db->insert_id());		
 	}
 	
 	public function insert_terms($terms, $search_id, $history_id = 0)
 	{
-		$data = array();
-		
-		foreach($terms as $index => $term)
+		if($this->should_save())
 		{
-			preg_match_all('/(\S*)/u', $term, $matches);
+			$data = array();
 			
-			$total_words = 0;
-			
-			foreach($matches[0] as $match)
+			foreach($terms as $index => $term)
 			{
-				if(!empty($match))
+				preg_match_all('/(\S*)/u', $term, $matches);
+				
+				$total_words = 0;
+				
+				foreach($matches[0] as $match)
 				{
-					$total_words++;
+					if(!empty($match))
+					{
+						$total_words++;
+					}
 				}
+				
+				$data[$index]['term']        = $term;
+				$data[$index]['site_id']     = config_item('site_id');
+				$data[$index]['search_id']   = $search_id;
+				$data[$index]['history_id']  = $history_id;
+				$data[$index]['ip_address']  = $this->session->userdata('ip_address');
+				$data[$index]['member_id']   = $this->session->userdata('member_id');
+				$data[$index]['total_chars'] = strlen($term);
+				$data[$index]['total_words'] = $total_words;
+				$data[$index]['date'] 		 = date('Y-m-d H:i:s', time());
 			}
 			
-			$data[$index]['term']        = $term;
-			$data[$index]['site_id']     = config_item('site_id');
-			$data[$index]['search_id']   = $search_id;
-			$data[$index]['history_id']  = $history_id;
-			$data[$index]['ip_address']  = $this->session->userdata('ip_address');
-			$data[$index]['member_id']   = $this->session->userdata('member_id');
-			$data[$index]['total_chars'] = strlen($term);
-			$data[$index]['total_words'] = $total_words;
-			$data[$index]['date'] 		 = date('Y-m-d H:i:s', time());
+			$this->db->insert_batch('channel_search_terms', $data);
 		}
-		
-		$this->db->insert_batch('channel_search_terms', $data);
 	}
 	
 	public function get($params = array(), $default_params = array(), $all_sites = FALSE)

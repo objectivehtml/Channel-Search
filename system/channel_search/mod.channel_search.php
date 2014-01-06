@@ -225,6 +225,31 @@ class Channel_search {
 		));
 	}
 
+	public function segment()
+	{
+		$name     = $this->param('name');
+		$segment  = $this->param('segment');
+		$segments = $this->EE->uri->segment_array();
+		
+		if(preg_match('/^\d*$/', $segment))
+		{
+			if(isset($segments[$segment]))
+			{
+				return TRUE;
+			}
+		}
+
+		foreach($segments as $index => $segment)
+		{
+			if($segment == $name)
+			{
+				return isset($segments[$index + 1]) ? $segments[$index + 1] : FALSE;
+			}
+		}
+
+		return FALSE;
+	}
+
 	public function segment_exists()
 	{
 		$segment  = $this->param('name', $this->param('segment'));
