@@ -272,11 +272,12 @@ class Channel_search_lib {
 				foreach($fields->result() as $field)
 				{
 					$field_array[] = $field;
-					$select[] 	   = 'field_id_'.$field->field_id.' as \''.$field->field_name.'\'';
+
+					$select[] = 'field_id_'.$field->field_id.' as \''.$field->field_name.'\'';
 				}				
 			}
 		}
-		
+
 		$channels    = $this->EE->channel_data->utility->reindex('channel_name', $channels);		
 		$field_array = $this->EE->channel_data->utility->reindex('field_name', $field_array);
 		
@@ -410,12 +411,17 @@ class Channel_search_lib {
 			'.(count($group_by_sql) > 0 ? 'GROUP BY '.implode(', ', $group_by_sql) : NULL).'
 			'.(count($having_sql) > 0 ? 'HAVING '.$this->clean_sql(implode(' ', $having_sql)) : NULL).'
 			ORDER BY '.$order_by.' '.$sort;
-		
+
 		if($export)
 		{
 			$this->EE->load->library('channel_search_export');
 			$this->EE->load->model('channel_search_history');
 			
+			if($export == 'true')
+			{
+				$export = config_item('channel_search_export_driver');
+			}
+
 			$this->EE->channel_search_history->insert_history($id, array_merge($_GET, $_POST), trim($sql));
 			$this->EE->channel_search_export->trigger($export, $sql, $rules);	
 		}
