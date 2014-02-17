@@ -161,23 +161,26 @@ class Channel_search {
 	{
 		$vars = array();
 		
-		foreach($this->EE->TMPL->tagparams as $param => $value)
+		if(is_array($this->EE->TMPL->tagparams))
 		{
-			$pattern = '/^default:/';
-
-			if(preg_match($pattern, $param))
+			foreach($this->EE->TMPL->tagparams as $param => $value)
 			{
-				$param = preg_replace($pattern, '', $param);
+				$pattern = '/^default:/';
 
-				if(!$this->EE->input->get_post($param))
+				if(preg_match($pattern, $param))
 				{
-					if($this->param('type', 'get') == 'get')
+					$param = preg_replace($pattern, '', $param);
+
+					if(!$this->EE->input->get_post($param))
 					{
-						$_GET[$param] = $value;
-					}
-					else
-					{
-						$_POST[$param] = $value;
+						if($this->param('type', 'get') == 'get')
+						{
+							$_GET[$param] = $value;
+						}
+						else
+						{
+							$_POST[$param] = $value;
+						}
 					}
 				}
 			}
@@ -516,8 +519,11 @@ class Channel_search {
 		$category_groups = array();
 		
 		foreach($this->EE->channel_search_lib->trim_array(explode(',', $rules->channel_names)) as $name)
-		{
-			$category_groups = array_merge($category_groups, explode('|', $channels[$name]->cat_group));
+		{	
+			foreach(explode('|', $channels[$name]->cat_group) as $group)
+			{
+				$category_groups[] = 'OR '.$group;
+			}
 		}
 
 		$categories = $this->EE->channel_data->get_categories(array(
