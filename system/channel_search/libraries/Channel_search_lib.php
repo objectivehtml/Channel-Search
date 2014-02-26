@@ -272,8 +272,7 @@ class Channel_search_lib {
 				foreach($fields->result() as $field)
 				{
 					$field_array[] = $field;
-
-					$select[] = 'field_id_'.$field->field_id.' as \''.$field->field_name.'\'';
+					$select[] 	   = 'field_id_'.$field->field_id.' as \''.$field->field_name.'\'';
 				}				
 			}
 		}
@@ -417,11 +416,6 @@ class Channel_search_lib {
 			$this->EE->load->library('channel_search_export');
 			$this->EE->load->model('channel_search_history');
 			
-			if($export == 'true')
-			{
-				$export = config_item('channel_search_export_driver');
-			}
-
 			$this->EE->channel_search_history->insert_history($id, array_merge($_GET, $_POST), trim($sql));
 			$this->EE->channel_search_export->trigger($export, $sql, $rules);	
 		}

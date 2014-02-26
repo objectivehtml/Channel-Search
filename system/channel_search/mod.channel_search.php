@@ -697,6 +697,9 @@ class Channel_search {
 				$vars = array_merge($vars, $rule->get_vars());
 			}
 			
+			$_GET  = $get;
+			$_POST = $post;
+			
 			return $this->parse(array($vars), $this->EE->TMPL->no_results());
 		}
 		
