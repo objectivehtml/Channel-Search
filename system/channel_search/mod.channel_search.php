@@ -342,6 +342,14 @@ class Channel_search {
 			$where['cat_name'] = $cat_name;
 		}
 
+		if( $this->param('show_children') && 
+			!(isset($where['cat_name']) || 
+			 isset($where['cat_url_title']) ||
+			 isset($where['cat_id'])))
+		{
+			$where['parent_id'] = 0;
+		}
+
 		if(!count($where))
 		{
 			return '';
@@ -851,6 +859,17 @@ class Channel_search {
 				if($next_node)
 				{
 					$return = $next_node;
+				}
+			}
+		}
+
+		if(!$return)
+		{
+			foreach($categories as $cat_index => $category)
+			{
+				if($category['parent_id'] == 0)
+				{
+					return $categories[0];
 				}
 			}
 		}

@@ -78,6 +78,6 @@ class Unique_token_channel_search_rule extends Base_rule {
 			$field = 'field_id_'.$this->fields[$rules->field_name]->field_id;
 		}
 
-		return $field . $rules->operator . ' \'' . $value . '\'';
+		return $field . $rules->operator . ' \'' . (!is_array($value) ? $value : '') . '\'';
 	}
 }

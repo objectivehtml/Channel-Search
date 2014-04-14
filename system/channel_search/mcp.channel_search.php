@@ -99,7 +99,15 @@ class Channel_search_mcp {
 	
 	public function index()
 	{
-		$this->EE->cp->set_variable('cp_page_title', lang('channel_search_module_name'));
+		if(version_compare(APP_VER, '2.7', '<'))
+		{
+			$this->EE->cp->set_variable('cp_page_title', lang('channel_search_module_name'));
+		}
+		else
+		{
+			$this->EE->view->cp_page_title = lang('channel_search_module_name');
+		}
+		
 		$this->EE->cp->set_right_nav(array(lang('channel_search_new_search') => $this->cp_url('new_search')));
 		
 		$vars = array(
@@ -130,7 +138,15 @@ class Channel_search_mcp {
 		$id   = $this->EE->input->get_post('id');
 		$rule = $this->EE->channel_search_model->get_rule($id);
 		
-		$this->EE->cp->set_variable('cp_page_title', lang('channel_search_manage_rules') . ' > ' . $rule->row('search_id'));
+		if(version_compare(APP_VER, '2.7', '<'))
+		{
+			$this->EE->cp->set_variable('cp_page_title', lang('channel_search_manage_rules') . ' > ' . $rule->row('search_id'));
+		}
+		else
+		{
+			$this->EE->view->cp_page_title = lang('channel_search_manage_rules') . ' > ' . $rule->row('search_id');
+		}
+
 		$this->EE->cp->set_right_nav(array(lang('channel_search_edit_search') => $this->cp_url('edit_search') . '&id='.$id, lang('channel_search_back_to_home') => $this->cp_url('index'),));
 		
 		
@@ -165,8 +181,15 @@ class Channel_search_mcp {
 		$rule 	 = $this->EE->input->get_post('rule');
 		$rule 	 = $this->EE->channel_search_rules->get_rule($rule);
 		
-		$this->EE->cp->set_variable('cp_page_title', lang('channel_search_new_rule') . ' > ' . $rule->get_title());
-		
+		if(version_compare(APP_VER, '2.7', '<'))
+		{
+			$this->EE->cp->set_variable('cp_page_title', lang('channel_search_new_rule') . ' > ' . $rule->get_title());
+		}
+		else
+		{
+			$this->EE->view->cp_page_title = lang('channel_search_new_rule') . ' > ' . $rule->get_title();
+		}
+
 		$this->EE->cp->set_right_nav(array(
 			lang('channel_search_back_to_rules') => $this->cp_url('manage_rules') . '&id='.$rule_id,
 			lang('channel_search_back_to_home') => $this->cp_url('index')
@@ -184,7 +207,7 @@ class Channel_search_mcp {
 			'description'   => $rule->display_description(),
 			'display_rule'  => $rule->display_rule(),
 			'xid'           => $this->EE->channel_search_lib->generate_xid(),
-			'action'        => cp_url('Channel_search', 'new_rule_action')
+			'action'        => $this->cp_url('new_rule_action')
 		);
 		
 		return $this->EE->load->view('rule_form', $vars, TRUE);
@@ -200,8 +223,15 @@ class Channel_search_mcp {
 		
 		$rule = $this->EE->channel_search_rules->get_rule($modifier->row('modifier'));
 		
-		$this->EE->cp->set_variable('cp_page_title', lang('channel_search_edit_rule') . ' > ' . $rule->get_title());
-		
+		if(version_compare(APP_VER, '2.7', '<'))
+		{
+			$this->EE->cp->set_variable('cp_page_title', lang('channel_search_edit_rule') . ' > ' . $rule->get_title());
+		}
+		else
+		{
+			$this->EE->view->cp_page_title = lang('channel_search_edit_rule') . ' > ' . $rule->get_title();
+		}
+
 		$this->EE->cp->set_right_nav(array(
 			lang('channel_search_back_to_rules') => $this->cp_url('manage_rules') . '&id='.$modifier->row('rule_id'),
 			lang('channel_search_back_to_home') => $this->cp_url('index')
@@ -219,7 +249,7 @@ class Channel_search_mcp {
 			'description'  => $rule->display_description(),
 			'display_rule' => $rule->display_rule($data),
 			'xid'          => $this->EE->channel_search_lib->generate_xid(),
-			'action'       => cp_url('Channel_search', 'edit_rule_action')
+			'action'       => $this->cp_url('edit_rule_action')
 		);
 		
 		return $this->EE->load->view('rule_form', $vars, TRUE);
@@ -237,7 +267,7 @@ class Channel_search_mcp {
 		
 		$rule_id = $this->EE->channel_search_model->create_rule($rule);
 		
-		$this->EE->functions->redirect(cp_url('Channel_search', 'manage_rules').'&id='.$rule_id);
+		$this->EE->functions->redirect($this->cp_url('manage_rules').'&id='.$rule_id);
 	}	
 	
 	public function edit_search_action()
@@ -254,7 +284,7 @@ class Channel_search_mcp {
 		
 		$this->EE->channel_search_model->update_rule($id, $rule);
 		
-		$this->EE->functions->redirect(cp_url('Channel_search', 'index'));
+		$this->EE->functions->redirect($this->cp_url('index'));
 	}
 	
 	public function new_rule_action()
@@ -270,7 +300,7 @@ class Channel_search_mcp {
 			'rules'         => is_string($rules) ? $rules : json_encode($rules)
 		));
 		
-		$this->EE->functions->redirect(cp_url('Channel_search', 'manage_rules').'&id='.$rule_id);
+		$this->EE->functions->redirect($this->cp_url('manage_rules').'&id='.$rule_id);
 	}
 	
 	public function edit_rule_action()
@@ -287,20 +317,28 @@ class Channel_search_mcp {
 		
 		$modifier = $this->EE->channel_search_model->get_modifier($id);
 		
-		$this->EE->functions->redirect(cp_url('Channel_search', 'manage_rules').'&id='.$modifier->row('rule_id'));
+		$this->EE->functions->redirect($this->cp_url('manage_rules').'&id='.$modifier->row('rule_id'));
 	}
 	
 	public function new_search()
 	{	
 		$this->EE->cp->set_right_nav(array(lang('channel_search_back_to_home') => $this->cp_url('index')));
-		$this->EE->cp->set_variable('cp_page_title', lang('channel_search_new_search'));
+		
+		if(version_compare(APP_VER, '2.7', '<'))
+		{
+			$this->EE->cp->set_variable('cp_page_title', lang('channel_search_new_search'));
+		}
+		else
+		{
+			$this->EE->view->cp_page_title = lang('channel_search_new_search');
+		}
 
 		$vars = array(
 			'type'          => 'New',
 			'button_text'   => 'Create Rule',
 			'xid'           => $this->EE->channel_search_lib->generate_xid(),
 			'settings'      => InterfaceBuilder::table($this->search_fields, array(), array(), channel_search_attr()),
-			'action'        => cp_url('Channel_search', 'new_search_action')
+			'action'        => $this->cp_url('new_search_action')
 		);
 
 		return $this->EE->load->view('search_form', $vars, TRUE);
@@ -311,7 +349,15 @@ class Channel_search_mcp {
 		$id     = $this->EE->input->get_post('id');	
 
 		$this->EE->cp->set_right_nav(array(lang('channel_search_back_to_rules') => $this->cp_url('manage_rules') . '&id='.$id, lang('channel_search_back_to_home') => $this->cp_url('index'),));
-		$this->EE->cp->set_variable('cp_page_title', lang('channel_search_edit_search'));
+		
+		if(version_compare(APP_VER, '2.7', '<'))
+		{
+			$this->EE->cp->set_variable('cp_page_title', lang('channel_search_edit_search'));
+		}
+		else
+		{
+			$this->EE->view->cp_page_title = lang('channel_search_edit_search');
+		}
 
 		$search = $this->EE->channel_search_model->get_rule($id)->row_array();
 				
@@ -321,7 +367,7 @@ class Channel_search_mcp {
 			'xid'           => $this->EE->channel_search_lib->generate_xid(),
 			'button_text'   => 'Save Changes',
 			'settings'      => InterfaceBuilder::table($this->search_fields, $search, array(), channel_search_attr()),
-			'action'        => cp_url('Channel_search', 'edit_search_action')
+			'action'        => $this->cp_url('edit_search_action')
 		);
 
 		return $this->EE->load->view('search_form', $vars, TRUE);
@@ -344,7 +390,7 @@ class Channel_search_mcp {
 		
 		$this->EE->channel_search_model->delete_modifier($id);
 		
-		$this->EE->functions->redirect(cp_url('Channel_search', 'manage_rules').'&id='.$modifier->row('rule_id'));
+		$this->EE->functions->redirect($this->cp_url('manage_rules').'&id='.$modifier->row('rule_id'));
 	}
 	
 	public function save_settings_action()
@@ -363,14 +409,24 @@ class Channel_search_mcp {
 
 	private function cp_url($method = 'index', $useAmp = FALSE)
 	{
-		$amp  = !$useAmp ? AMP : '&';
+		if(version_compare(APP_VER, '2.8', '<'))
+		{
+			$amp  = !$useAmp ? AMP : '&';
 
-		$file = substr(BASE, 0, strpos(BASE, '?'));
-		$file = str_replace($file, '', $_SERVER['PHP_SELF']) . BASE;
+			$file = substr(BASE, 0, strpos(BASE, '?'));
+			$file = str_replace($file, '', $_SERVER['PHP_SELF']) . BASE;
 
-		$url  = $file .$amp. '&C=addons_modules' .$amp . 'M=show_module_cp' . $amp . 'module=channel_search' . $amp . 'method=' . $method;
+			$url  = $file .$amp. '&C=addons_modules' .$amp . 'M=show_module_cp' . $amp . 'module=channel_search' . $amp . 'method=' . $method;
 
-		return str_replace(AMP, $amp, $url);
+			return str_replace(AMP, $amp, $url);
+		}
+		else
+		{
+			return cp_url('addons_modules/show_module_cp', array(
+				'module' => 'channel_search',
+				'method' => $method
+			));
+		}
 	}
 	
 	private function current_url($append = '', $value = '')
