@@ -142,11 +142,11 @@ class Default_channel_search_rule extends Base_rule {
 									}
 								}
 
-								$value_where[] = ' '.$field_names[0].' '.$rule->operator.' '.$EE->db->escape($value);
+								$value_where[] = ' exp_channel_titles.'.$field_names[0].' '.$rule->operator.' '.$EE->db->escape($value);
 							}
 							else
 							{	
-								$value_where[] = ' field_id_'.$this->fields[$rule->channel_field_name]->field_id.' '.$rule->operator.' '.$EE->db->escape($value);
+								$value_where[] = ' exp_channel_data.field_id_'.$this->fields[$rule->channel_field_name]->field_id.' '.$rule->operator.' '.$EE->db->escape($value);
 							}
 						}
 						else
@@ -157,7 +157,7 @@ class Default_channel_search_rule extends Base_rule {
 							{
 								if(isset($this->fields[$field_name]))
 								{
-									$concat[] = 'field_id_'.$this->fields[$field_name]->field_id;	
+									$concat[] = 'exp_channel_data.field_id_'.$this->fields[$field_name]->field_id;	
 								}
 							}
 							

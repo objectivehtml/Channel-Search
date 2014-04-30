@@ -272,7 +272,7 @@ class Channel_search_lib {
 				foreach($fields->result() as $field)
 				{
 					$field_array[] = $field;
-					$select[] 	   = 'field_id_'.$field->field_id.' as \''.$field->field_name.'\'';
+					$select[] 	   = 'exp_channel_data.field_id_'.$field->field_id.' as \''.$field->field_name.'\'';
 				}				
 			}
 		}

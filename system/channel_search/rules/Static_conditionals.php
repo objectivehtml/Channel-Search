@@ -74,10 +74,14 @@ class Static_conditionals_channel_search_rule extends Base_rule {
 				$value = str_replace('CURRENT_USER', $this->userdata('member_id'), $value);
 				
 				$field = $rule->field_name;
-				
+								
 				if(isset($this->fields[$rule->field_name]))
 				{
-					$field = 'field_id_'.$this->fields[$rule->field_name]->field_id;
+					$field = 'exp_channel_data.field_id_'.$this->fields[$rule->field_name]->field_id;
+				}
+				else
+				{
+					$field = 'exp_channel_titles.'.$field;
 				}
 				
 				if(!empty($value))
