@@ -439,8 +439,8 @@ class Channel_search {
 				
 				$count++;
 			}
-
-			if($start && $start == $segment)
+			
+			if($start && ($start == $segment || $start == $index))
 			{
 				$valid = TRUE;
 			}
