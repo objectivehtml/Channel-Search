@@ -11,8 +11,8 @@
  * @author		Justin Kimbrell
  * @copyright	Copyright (c) 2012, Justin Kimbrell
  * @link 		http://www.objectivehtml.com/google-maps
- * @version		1.0
- * @build		20120207
+ * @version		1.1.2
+ * @build		20140618
  */
  
 if(!class_exists('Data_forge'))
@@ -68,7 +68,7 @@ if(!class_exists('Data_forge'))
 		
 		public function field_data($table)
 		{
-			$fields = $this->EE->db->query('SHOW COLUMNS FROM `'.$this->EE->db->dbprefix.$table)->result();
+			$fields = $this->EE->db->query('SHOW COLUMNS FROM `'.$this->EE->db->dbprefix.$table.'`')->result();
 			
 			$field_data = array();
 			$matches	= array();
@@ -81,7 +81,7 @@ if(!class_exists('Data_forge'))
 				{
 					$meta['unsigned'] = TRUE;
 					
-					$field->Type = $match[1];
+					$field->Type = $matches[1];
 				}
 					
 				if(preg_match('/^(.*)\((\d+)\)$/', $field->Type, $matches))
@@ -168,7 +168,9 @@ if(!class_exists('Data_forge'))
 				}	
 				else
 				{
-					if(count(array_diff($field, $existing_fields[$field_name])) > 0)
+					$diff = array_diff($field, $existing_fields[$field_name]);
+					
+					if(count($diff) > 0)
 					{
 						$column_data[$field_name]['name'] = '`'.$field_name.'`';
 						
