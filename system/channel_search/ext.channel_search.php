@@ -92,6 +92,13 @@ class Channel_search_ext {
 			$result[0]['is_first_row'] = TRUE;
 			$result[count($result) - 1]['is_last_row'] = TRUE;
 
+			if(isset($obj->pagination))
+			{
+				$obj->pagination->paginate = true;
+				$obj->pagination->per_page = $cache->limit;
+				$obj->pagination->offset = $cache->offset;
+			}
+			
 			foreach($result as $index => $row)
 			{
 				$result[$index]['index'] = $index;
