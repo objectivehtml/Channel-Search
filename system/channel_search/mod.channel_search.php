@@ -727,7 +727,7 @@ class Channel_search {
 		$vars['total_pages']   = ceil($results->grand_total / $limit);
 		
 		$_GET['page'] = $page - 1;
-		
+
 		$vars['prev_page']     = ($page - 1 > 0 ? $page - 1 : 1);
 		$vars['prev_page_url'] = $page - 1 > 0  ? page_url(TRUE, TRUE, FALSE) : FALSE;
 		

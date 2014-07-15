@@ -6,9 +6,11 @@
  * @author		Justin Kimbrell
  * @copyright	Copyright (c) 2012, Objective HTML
  * @link 		http://www.objectivehtml.com/
- * @version		1.0.0
- * @build		20120914
+ * @version		1.0.1
+ * @build		20130619
  */
+
+ee()->load->helper('url_helper');
 
 /**
  * Site URL
@@ -84,10 +86,6 @@ if(!function_exists('page_url'))
 		{
 			$uri = '/' . implode('/', $segments);
 		}
-		else
-		{
-			$uri = isset($_SERVER['PHP_SELF']) ? $_SERVER['PHP_SELF'] : NULL;	
-		}
 		
 		if(count($_GET) > 0 && $append_get)
 		{
@@ -142,9 +140,13 @@ if(!function_exists('base_page'))
 			 $_SERVER['SCRIPT_URI'] = $http . $_SERVER['HTTP_HOST']. $_SERVER['REQUEST_URI'];
 		}
 		
+		$segments = rtrim(str_replace(basename($_SERVER['SCRIPT_NAME']), '', $_SERVER['SCRIPT_NAME']), '/');
+		$base_url = rtrim($http . $_SERVER['HTTP_HOST'] . $segments . '/' . config_item('site_index'), '/');
+		$base_url = str_replace(array('http://', 'https://'), '', $base_url);
+		
 		if(!$use_config)
 		{
-			$return = $http . $_SERVER['HTTP_HOST'] . $append;
+			$return = $http . $base_url . $append;
 		}
 		else
 		{
@@ -152,5 +154,22 @@ if(!function_exists('base_page'))
 		}
 		
 		return $return;
+	}
+}
+
+/**
+ * Base URL
+ *
+ * Returns the "base_url" item from your config file
+ *
+ * @access	public
+ * @return	string
+ */
+if ( ! function_exists('base_url'))
+{
+	function base_url()
+	{
+		$CI =& get_instance();
+		return $CI->config->slash_item('base_url');
 	}
 }
