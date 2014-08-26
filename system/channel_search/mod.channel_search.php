@@ -665,6 +665,12 @@ class Channel_search {
 		
 		$id       = $this->param('id', FALSE);		
 		$order_by = $this->param('order_by', $this->param('orderby', 'entry_id'));
+
+		if(strtolower($order_by) == 'random')
+		{
+			$order_by = 'RAND()';
+		}
+
 		$sort     = $this->param('sort', 'desc');
 		$limit    = (int) $this->param('limit', 20);
 		$page     = (int) $this->param('page', 1);
