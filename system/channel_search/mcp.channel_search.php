@@ -49,6 +49,17 @@ class Channel_search_mcp {
 				'description' => lang('channel_search_get_trigger_desc'),
 				'type'	=> 'input'
 			),
+			'get_trigger_operator' => array(
+				'label' => lang('channel_search_get_trigger_operator'),
+				'description' => lang('channel_search_get_trigger_operator_desc'),
+				'type'	=> 'radio',
+				'settings' => array(
+					'options' => array(
+						'and' => 'And',
+						'or'  => 'Or'
+					)
+				)
+			),
 			'empty_trigger' => array(
 				'label' => lang('channel_search_empty_trigger'),
 				'description' => lang('channel_search_empty_trigger_desc'),
@@ -261,6 +272,7 @@ class Channel_search_mcp {
 			'search_id'     => $this->EE->input->post('search_id', TRUE),
 			'channel_names' => $this->EE->input->post('channel_names', TRUE),
 			'get_trigger'   => $this->EE->input->post('get_trigger', TRUE),
+			'get_trigger_operator'   => $this->EE->input->post('get_trigger_operator', TRUE),
 			'empty_trigger' => $this->EE->input->post('empty_trigger', TRUE),
 			'prevent_search_trigger' => $this->EE->input->post('prevent_search_trigger', TRUE) 
 		);
@@ -278,6 +290,7 @@ class Channel_search_mcp {
 			'search_id'     => $this->EE->input->post('search_id', TRUE),
 			'channel_names' => $this->EE->input->post('channel_names', TRUE),
 			'get_trigger'   => $this->EE->input->post('get_trigger', TRUE),
+			'get_trigger_operator'   => $this->EE->input->post('get_trigger_operator', TRUE),
 			'empty_trigger' => $this->EE->input->post('empty_trigger', TRUE),
 			'prevent_search_trigger' => $this->EE->input->post('prevent_search_trigger', TRUE)  
 		);

@@ -71,30 +71,36 @@ class Channel_search_lib {
 		}	
 
 		$has_searched = FALSE;
+		$get_triggers = explode(',', $search->get_trigger);
+		$search_triggers = array();
 
 		if(!empty($search->get_trigger))
 		{
 			$has_searched = TRUE;
 
-			foreach($this->trim_array(explode(',', $search->get_trigger)) as $trigger)
+			foreach($this->trim_array($get_triggers) as $trigger)
 			{
 				$trigger = trim($trigger);
 				$value   = $this->EE->input->get_post($trigger);
-				
+
 				if(is_array($value))
 				{
 					$value = $this->trim_array($value);
 				}
 				else
 				{
-					$value = trim($value);
+					$value = $value ? trim($value) : $value;
 				}
-				
+
 				if($search->empty_trigger != 'true')
 				{
 					if(!$value || empty($value))
 					{
 						$has_searched = FALSE;
+					}
+					else
+					{
+						$search_triggers[] = $value;
 					}
 				}
 				else
@@ -103,12 +109,32 @@ class Channel_search_lib {
 					{
 						$has_searched = FALSE;
 					}
+					else
+					{
+						$search_triggers[] = $value;
+					}
 				}
 			}
 		}
 		else
 		{
 			$has_searched = TRUE;
+			$search_triggers[] = $value;
+		}
+
+		if(empty($search->get_trigger_operator) || $search->get_trigger_operator == 'and')
+		{
+			if(count($search_triggers) < count($get_triggers))
+			{
+				$has_searched = FALSE;
+			}
+		}
+		else
+		{
+			if(count($search_triggers) > 0)
+			{
+				$has_searched = TRUE;
+			}
 		}
 
 		return $has_searched;

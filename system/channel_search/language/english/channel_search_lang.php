@@ -14,6 +14,9 @@ $lang = array(
 'channel_search_get_trigger'        => 'Variable Trigger(s)',
 'channel_search_get_trigger_desc'   => 'This is the name of the GET/POST variable that should trigger the results tag to perform the search.',
 
+'channel_search_get_trigger_operator' => 'Variable Trigger Logical Operator',
+'channel_search_get_trigger_operator_desc' => 'This operator is used to determine if multiple variable triggers are valid. By default, the search will only be triggered if all variables are set. If you use the "Or" operator, the search will trigger if only one of the variables are set.',
+
 'channel_search_empty_trigger' 		=> 'Trigger if empty?',
 'channel_search_empty_trigger_desc' => 'If this is set to True, the search will be performed if the Variable Triggers are set but have empty values. By default, the Variable Triggers must be set and contain some value to trigger the search.',
 

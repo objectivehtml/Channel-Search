@@ -126,6 +126,10 @@ class Channel_search_upd {
 				'type'			=> 'varchar',
 				'constraint' 	=> 200
 			),
+			'get_trigger_operator' => array(
+				'type'			=> 'varchar',
+				'constraint' 	=> 200
+			),
 			'empty_trigger' => array(
 				'type'			=> 'varchar',
 				'constraint' 	=> 200

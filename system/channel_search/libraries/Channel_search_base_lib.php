@@ -185,16 +185,14 @@ if(!class_exists('Channel_search_base_lib'))
 			$orig_base_path = $this->base_path;
 			$base_directory = rtrim($this->base_directory, '/');
 			
-			foreach(directory_map(PATH_THIRD) as $dir_name => $dir)
+			foreach(directory_map(PATH_THIRD, 1) as $dir_name)
 			{
 				$this->base_path = PATH_THIRD . $dir_name . '/';
-				
-				if(isset($dir[$base_directory]) && is_array($dir[$base_directory]))
+
+				if(is_dir($dir = PATH_THIRD . $dir_name . '/rules'))
 				{
-					$dir = $dir[$base_directory];
-					
-					foreach($dir as $file)
-					{		
+					foreach(directory_map($dir, 1) as $file)
+					{
 						if($object = $this->load($file))
 						{	
 							$objects[] = $object;
