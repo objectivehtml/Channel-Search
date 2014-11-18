@@ -443,6 +443,7 @@ class Channel_search_lib {
 			$this->EE->load->model('channel_search_history');
 			
 			$this->EE->channel_search_history->insert_history($id, array_merge($_GET, $_POST), trim($sql));
+			$this->EE->channel_search_export->id = $id;
 			$this->EE->channel_search_export->trigger($export, $sql, $rules);	
 		}
 		

@@ -85,6 +85,15 @@ class Channel_search_export extends Channel_search_base_lib {
 		
 	
 	/**
+	 * The id of the current search
+	 * 
+	 * @var string
+	 */
+
+	public $id = null;
+
+	
+	/**
 	 * Construct
 	 *
 	 * @access	public
@@ -163,6 +172,7 @@ class Channel_search_export extends Channel_search_base_lib {
 	 * @param	string  A name of the export driver to trigger
 	 * @param 	object  A database object of the query
 	 * @param   array   An array of rule objects
+	 * @param   string  The search's user created id
 	 * @return	int
 	 */
 	
@@ -182,6 +192,8 @@ class Channel_search_export extends Channel_search_base_lib {
 		{
 			$trigger_obj = $this->get_driver($this->default_object);	
 		}
+
+		$trigger_obj->set_id($this->id);
 		
 		return $trigger_obj->export($data, $rules);		
 	}

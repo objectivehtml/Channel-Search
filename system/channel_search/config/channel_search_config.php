@@ -90,5 +90,22 @@ $config = array(
 		'recent_comment_date',
 		'comment_total'
 	),
+	
+	/* --------------------------------------------------------
+	 *  Export specific columns
+	 *
+	 *  If you want to export specific fields enter them here
+	 *  
+	 *  Sample Format:
+	 *  
+	 *  array(
+	 *		'Your Search Id' => array(
+	 *			'your_field_name_1',
+	 *			'your_field_name_2'
+	 *		)
+	 *  )
+	 * -------------------------------------------------------*/
+ 
+	'channel_search_export_columns' => array()
 
 );
