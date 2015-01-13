@@ -77,9 +77,12 @@ abstract class Base_export {
 		$fields = array();
 		$data = $this->get_data($sql);
 
-		foreach($data[0] as $field => $value)
+		if(isset($data[0]))
 		{
-			$fields[] = $field;
+			foreach($data[0] as $field => $value)
+			{
+				$fields[] = $field;
+			}
 		}
 
 		$xls = new Excel_XML;

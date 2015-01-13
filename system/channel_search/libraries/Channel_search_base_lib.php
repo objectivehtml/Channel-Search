@@ -189,7 +189,7 @@ if(!class_exists('Channel_search_base_lib'))
 			{
 				$this->base_path = PATH_THIRD . $dir_name . '/';
 
-				if(is_dir($dir = PATH_THIRD . $dir_name . '/rules'))
+				if(is_dir($dir = PATH_THIRD . $dir_name . '/' . $base_directory))
 				{
 					foreach(directory_map($dir, 1) as $file)
 					{

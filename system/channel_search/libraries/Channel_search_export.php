@@ -179,7 +179,7 @@ class Channel_search_export extends Channel_search_base_lib {
 	public function trigger($driver, $data, $rules)
 	{	
 		$trigger_obj = FALSE;
-		
+
 		foreach($this->get_drivers() as $driver_obj)
 		{
 			if($driver_obj->get_trigger() == $driver)

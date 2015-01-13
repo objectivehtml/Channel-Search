@@ -48,6 +48,10 @@ class Date_time_channel_search_rule extends Base_rule {
 			)
 		)			
 	);
+
+	protected $reserved_fields = array(
+		'entry_date'
+	);
 	
 	public function __construct($properties = array())
 	{
@@ -85,50 +89,30 @@ class Date_time_channel_search_rule extends Base_rule {
 				{
 					$value = '%'.$value.'%';	
 				}
-				
+
 				if($value && !empty($value))
 				{
-					$field_names = $this->trim_array(explode(',', $rule->channel_field_name));
-					
-					if(count($field_names) == 1 && isset($this->fields[$rule->channel_field_name]) || in_array($field_names[0], $this->reserved_fields))
+					$value = strtotime($value);
+
+					if(!empty($rule->format))
 					{
-						if(in_array($field_names[0], $this->reserved_fields))
-						{
-							if(in_array($field_names[0], $this->date_fields))
-							{
-								$value = strtotime($value);
-							}
-							
-							$where[] = $rule->clause.' '.$field_names[0].' '.$rule->operator.' '.$EE->db->escape($value);
-						}
-						else
-						{	
-							$where[] = $rule->clause.' field_id_'.$this->fields[$rule->channel_field_name]->field_id.' '.$rule->operator.' '.$EE->db->escape($value);
-						}
+						$value = date($rule->format, $value);
+					}
+
+					if(isset($this->fields[$rule->field_name]))
+					{
+						$where[] = $rule->clause.' '.'field_id_'.$this->fields[$field_name]->field_id.' '.$rule->operator.' '.$EE->db->escape($value);
 					}
 					else
-					{	
-						$concat = array('\' \'');
-						
-						foreach($field_names as $field_name)
-						{
-							if(isset($this->fields[$field_name]))
-							{
-								$concat[] = 'field_id_'.$this->fields[$field_name]->field_id;	
-							}
-						}
-						
-						if(count($concat) > 1)
-						{
-							$where[] = $rule->clause.' concat_ws('.implode($concat, ',').') '.$rule->operator.' '.$EE->db->escape($value);
-						}
+					{
+						$where[] = $rule->clause.' '.$rule->field_name.' '.$rule->operator.' '.$EE->db->escape($value);
 					}
 				}
 			}
 			
 			$this->where = $this->clean_sql(implode(' ', $where));
 		}
-		
+
 		return $this->where;
 	}
 }

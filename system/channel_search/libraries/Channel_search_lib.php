@@ -342,7 +342,7 @@ class Channel_search_lib {
 			
 			if(!empty($rule_join))
 			{
-				$join[]  = $rule_join;
+				$join[] = ' ' . is_array($rule_join) ? implode(' ', $rule_join) : $rule_join;
 			}
 			
 			if(!empty($rule_select))
@@ -362,7 +362,7 @@ class Channel_search_lib {
 					'rule'   => $rule_where
 				);
 			}
-			
+
 			$rules[$rule->get_export_trigger()] = $rule;		
 		}
 		

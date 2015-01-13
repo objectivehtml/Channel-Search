@@ -680,7 +680,7 @@ class Channel_search {
 		{
 			$offset = ($page - 1) * $limit;
 		}	
-		
+
 		$results = $this->EE->channel_search_lib->search($id, $order_by, $sort, $limit, $offset, $this->param('export', FALSE));
 		
 		if(!$results)
@@ -743,13 +743,71 @@ class Channel_search {
 	
 		$vars['next_page_url'] = $vars['next_page'] < $vars['total_pages'] ? page_url(TRUE, TRUE, FALSE) : FALSE; 
 		
-		$_GET['page'] = $page;
-		
 		$vars['current_page']  = $page;
 		$vars['is_first_page'] = $page == 1 ? TRUE : FALSE;
 		$vars['is_last_page']  = $page == $vars['total_pages'] ? TRUE : FALSE;
 		
 		$this->EE->load->library('entries_lib');
+
+		$vars['pagination'] = array();
+
+		$page_offset = $vars['current_page'] - $this->param('pagination_offset', 3);
+		$page_offset = $page_offset < 1 ? 1 : $page_offset;
+		$page_length = $this->param('pagination_length', 4);
+
+		if($page_offset > $vars['total_pages'] - $page_length)
+		{
+			$page_offset = $vars['total_pages'] - $page_length;
+		}
+
+		if($page_offset > 1)
+		{
+			$_GET['page'] = 1;
+
+			$vars['pagination'][] = array(
+				'pagination:is_first_page' => true,
+				'pagination:is_last_page' => false,
+				'pagination:current_page' => $vars['current_page'] == 1,
+				'pagination:url' => page_url(TRUE, TRUE, FALSE),
+				'pagination:page' => 1
+			);
+		}
+
+		for($x = $page_offset; $x < $vars['current_page'] + $page_length; $x++)
+		{
+			$_GET['page'] = $x;
+
+			if($x > $vars['total_pages'])
+			{
+				break;
+			}
+
+			if($x > 0)
+			{
+				$vars['pagination'][] = array(
+					'pagination:is_first_page' => false,
+					'pagination:is_last_page' => false,
+					'pagination:current_page' => $x == $page,
+					'pagination:url' => page_url(TRUE, TRUE, FALSE),
+					'pagination:page' => $x
+				);
+			}
+		}
+
+		if($vars['current_page'] + $page_length <= $vars['total_pages'])
+		{
+			$_GET['page'] = $vars['total_pages'];
+
+			$vars['pagination'][] = array(
+				'pagination:is_first_page' => false,
+				'pagination:is_last_page' => true,
+				'pagination:current_page' => $vars['current_page'] == $vars['total_pages'],
+				'pagination:url' => page_url(TRUE, TRUE, FALSE),
+				'pagination:page' => $vars['total_pages']
+			);
+		}
+
+		$_GET['page'] = $page;
 		
 		$entry_ids = array();
 		
@@ -764,12 +822,19 @@ class Channel_search {
 		if($results->has_searched)
 		{
 			$this->EE->session->set_cache('channel_search', 'search_results', $results);
-			
+
+			if(version_compare(APP_VER, '2.9.0', '>='))
+			{
+				if($sort == 'desc')
+				{
+					$entry_ids = array_reverse($entry_ids);
+				}
+			}
+
 			$this->EE->TMPL->tagdata = $this->EE->entries_lib->entries(array(
 				'channel'     => $results->channels,
 				'entry_id'    => implode($entry_ids, '|'),
 				'fixed_order' => implode($entry_ids, '|'),
-				'limit'       => $limit,
 				'status' 	  => implode('|', $results->statuses)
 			));
 		}

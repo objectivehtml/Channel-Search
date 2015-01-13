@@ -10,7 +10,7 @@ class Default_channel_search_rule extends Base_rule {
 	
 	protected $name = 'default';
 	
-	protected $reserved_fields = array('title', 'status', 'entry_date', 'expiration_date');
+	protected $reserved_fields = array('title', 'status', 'entry_date', 'expiration_date', 'channel_id');
 	
 	protected $date_fields = array('entry_date', 'expiration_date');
 	

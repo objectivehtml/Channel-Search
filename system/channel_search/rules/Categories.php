@@ -53,6 +53,7 @@ class Categories_channel_search_rule extends Base_rule {
 			'type'		  => 'select',
 			'settings'	  => array(
 				'options' => array(
+					''     => 'Do Not Use Count',
 					'>='   => '>=',
 					'='    => '=',
 					'!='   => '!=',
@@ -170,7 +171,7 @@ class Categories_channel_search_rule extends Base_rule {
 			    LEFT JOIN exp_categories USING (cat_id)
 			    WHERE ('.$required_where.') '.(count($cat_where) > 0 ? ' AND ('. implode(' '.$clause.' ', $cat_where) .')' : NULL).'
 			    GROUP BY entry_id
-			    '.(count($cat_having) > 0 ? 'HAVING cat_count '.$count_op.' '.count($cat_having) : NULL).'
+			    '.((count($cat_having) > 0 && !empty($count_op)) ? 'HAVING cat_count '.$count_op.' '.count($cat_having) : NULL).'
 			) cc
 			INNER JOIN
 		    	exp_channel_data ON exp_channel_data.entry_id = cc.entry_id'
@@ -186,7 +187,7 @@ class Categories_channel_search_rule extends Base_rule {
 	
 	public function get_where()
 	{
-		if(count($this->cat_where) > 0)
+		if(count($this->cat_where) > 0 && !empty($this->settings->rules->count_operator))
 		{
 			return array('cat_count '.$this->settings->rules->count_operator.' '.count($this->cat_where));
 		}

@@ -12,7 +12,8 @@ class Default_search_driver extends Base_Search_Driver {
 			'expiration_date',
 			'author_id',
 			'entry_id',
-			'status'
+			'status',
+			'channel_id'
 		);
 		
 		if(empty($rule->clause))
