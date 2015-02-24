@@ -101,7 +101,7 @@ class Date_time_channel_search_rule extends Base_rule {
 
 					if(isset($this->fields[$rule->field_name]))
 					{
-						$where[] = $rule->clause.' '.'field_id_'.$this->fields[$field_name]->field_id.' '.$rule->operator.' '.$EE->db->escape($value);
+						$where[] = $rule->clause.' '.'field_id_'.$this->fields[$rule->field_name]->field_id.' '.$rule->operator.' '.$EE->db->escape($value);
 					}
 					else
 					{
