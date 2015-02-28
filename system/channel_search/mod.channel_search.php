@@ -293,10 +293,15 @@ class Channel_search {
 
 			if($url_title)
 			{
+				$entry_entry = array('url_title' => $url_title);
+
+				if($channel_id = $this->param('channel_id'))
+				{
+					$entry_entry['channel_titles.channel_id'] = $channel_id;
+				}
+
 				$entry = $this->EE->channel_data->get_entries(array(
-					'where' => array(
-						'url_title' => $url_title
-					),
+					'where' => $entry_entry,
 					'limit' => 1
 				));
 
