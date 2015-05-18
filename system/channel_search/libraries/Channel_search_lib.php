@@ -119,7 +119,6 @@ class Channel_search_lib {
 		else
 		{
 			$has_searched = TRUE;
-			$search_triggers[] = $value;
 		}
 
 		if(empty($search->get_trigger_operator) || $search->get_trigger_operator == 'and')
@@ -342,7 +341,7 @@ class Channel_search_lib {
 			
 			if(!empty($rule_join))
 			{
-				$join[] = ' ' . is_array($rule_join) ? implode(' ', $rule_join) : $rule_join;
+				$join[] = ' ' . (is_array($rule_join) ? implode(' ', $rule_join) : $rule_join);
 			}
 			
 			if(!empty($rule_select))
